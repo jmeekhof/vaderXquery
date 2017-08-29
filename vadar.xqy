@@ -3,11 +3,11 @@ xquery version "1.0-ml";
 module namespace vadar = "http://vadarSentiment/vadar";
 
 (:Increase decrease based upon booster words:)
-declare variable $vadar:B_INCR as xs:float := 0.293;
-declare variable $vadar:B_DECR as xs:float := -0.293;
+declare variable $vadar:B_INCR as xs:double := 0.293;
+declare variable $vadar:B_DECR as xs:double := -0.293;
 (:Intensity increase do to CAPITALIZED words:)
-declare variable $vadar:C_INCR as xs:float := 0.733;
-declare variable $vadar:N_SCALAR as xs:float := -0.74;
+declare variable $vadar:C_INCR as xs:double := 0.733;
+declare variable $vadar:N_SCALAR as xs:double := -0.74;
 
 declare variable $vadar:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
 declare variable $vadar:NEGATE as xs:string+ :=  ("aint", "arent", "cannot", "cant", "couldnt", "darent", "didnt", "doesnt", "ain't", "aren't", "can't", "couldn't", "daren't", "didn't", "doesn't", "dont", "hadnt", "hasnt", "havent", "isnt", "mightnt", "mustnt", "neither", "don't", "hadn't", "hasn't", "haven't", "isn't", "mightn't", "mustn't", "neednt", "needn't", "never", "none", "nope", "nor", "not", "nothing", "nowhere", "oughtnt", "shant", "shouldnt", "uhuh", "wasnt", "werent", "oughtn't", "shan't", "shouldn't", "uh-uh", "wasn't", "weren't", "without", "wont", "wouldnt", "won't", "wouldn't", "rarely", "seldom", "despite");
@@ -126,3 +126,24 @@ declare function vadar:negated ( $input-words as xs:string+, $include-nt as xs:b
         fn:false()
 };
 
+declare function normalize ($score as xs:double) as xs:double {
+  vadar:normalize($score, xs:double(15))
+};
+
+declare function normalize ($score as xs:double, $alpha as xs:double) {
+  (:~
+   : Normalizes the score to be between -1 and 1 using an alpha that
+   : approximates the max expected value
+   :)
+  let $norm-score := $score div math:sqrt($score*$score + $alpha)
+
+  return
+
+    if ( $norm-score < -1.0 ) then
+      -1.0
+    else
+      if ( $norm-score > 1.0 ) then
+        1.0
+      else
+        $norm-score
+};

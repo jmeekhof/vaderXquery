@@ -38,3 +38,16 @@ declare %test:case function  negated-test-least-again ()
     assert:true(vadar:negated(fn:tokenize($string1, " ")))
     )
 };
+
+declare %test:case function normalize () {
+  let $score := xs:decimal(0)
+  let $score-pos := xs:decimal(1000)
+  let $score-neg := xs:decimal(-1000)
+
+  return (
+    assert:equal(vadar:normalize($score), 0 ),
+    assert:true(vadar:normalize($score-pos) > 0),
+    assert:true(vadar:normalize($score-neg) < 0)
+  )
+};
+
