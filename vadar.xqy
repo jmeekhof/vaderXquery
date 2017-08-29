@@ -93,4 +93,36 @@ declare variable $vadar:SPECIAL_CASE_IDIOMS as map:map := map:new ((
 
 declare option xdmp:mapping "false";
 
+declare function vadar:negated ( $input-words as xs:string+ )  {
+  vadar:negated($input-words, fn:true())
+};
+
+declare function vadar:negated ( $input-words as xs:string+, $include-nt as xs:boolean) {
+(:~
+ : Determine if input words contain negation words
+ :)
+
+  let $negated as xs:boolean := $input-words = $vadar:NEGATE
+  return
+  if ( $negated ) then
+    fn:true()
+  else
+    if ( $include-nt ) then
+      some $word in ($input-words ! fn:matches(.,"n't") ) satisfies ($word = fn:true())
+
+    else
+      if ( "least" = $input-words ) then
+        let $i := fn:index-of($input-words, "least")
+        let $x :=
+          $i !
+          (
+          if ( . > 1 and fn:not($input-words[(.)-1] = "at") ) then
+            fn:true()
+          else
+            fn:false()
+          )
+        return $x
+      else
+        fn:false()
+};
 
