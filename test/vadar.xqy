@@ -78,3 +78,11 @@ declare %test:case function scalar_inc_dec() {
     assert:true( vadar:scalar_inc_dec($neg-word, 0, fn:true()) lt 0 )
   )
 };
+
+declare %test:case function remove-punctuation() {
+  let $sentence := "This is a sentence, with punctuation."
+  let $clean := "This is a sentence with punctuation"
+
+  return
+    assert:equal(vadar:remove-punctuation($sentence), $clean)
+};

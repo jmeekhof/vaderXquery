@@ -1,6 +1,8 @@
 xquery version "1.0-ml";
 
 module namespace vadar = "http://vadarSentiment/vadar";
+import module namespace functx = "http://www.functx.com" at "/MarkLogic/functx/functx-1.0-nodoc-2007-01.xqy";
+
 
 (:Increase decrease based upon booster words:)
 declare variable $vadar:B_INCR as xs:double := 0.293;
@@ -11,6 +13,8 @@ declare variable $vadar:N_SCALAR as xs:double := -0.74;
 
 declare variable $vadar:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
 declare variable $vadar:NEGATE as xs:string+ :=  ("aint", "arent", "cannot", "cant", "couldnt", "darent", "didnt", "doesnt", "ain't", "aren't", "can't", "couldn't", "daren't", "didn't", "doesn't", "dont", "hadnt", "hasnt", "havent", "isnt", "mightnt", "mustnt", "neither", "don't", "hadn't", "hasn't", "haven't", "isn't", "mightn't", "mustn't", "neednt", "needn't", "never", "none", "nope", "nor", "not", "nothing", "nowhere", "oughtnt", "shant", "shouldnt", "uhuh", "wasnt", "werent", "oughtn't", "shan't", "shouldn't", "uh-uh", "wasn't", "weren't", "without", "wont", "wouldnt", "won't", "wouldn't", "rarely", "seldom", "despite");
+
+declare variable $vadar:PUNC as xs:string+ := '!"#$%&#38;()*+,-./:;<=>?@[\\]^_`{|}~' || "'";
 
 declare variable $vadar:BOOSTER_DICT as map:map := map:new( (
   map:entry("absolutely", $vadar:B_INCR),
@@ -191,4 +195,32 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
         $scalar - $vadar:C_INCR
     else
       $scalar
+};
+
+(:
+declare function _words_plus_punc($text as xs:string) as map:map {
+  let $no_punc_text :=
+    fn:string-join(
+      fn:filter(
+        function($x) {fn:not($x = (",",".",";","?","!",'"'))},
+        functx:chars($x)
+      )
+    )
+
+  return map:new(())
+};
+:)
+
+declare function remove-punctuation( $text as xs:string) as xs:string {
+  (:~
+   : Removes standard punctuation from a string of text.
+   :)
+  let $f := function($x) {
+    fn:not($x = functx:chars($vadar:PUNC))
+  }
+
+  return
+    fn:string-join(
+      fn:filter($f(?), functx:chars($text))
+    )
 };
