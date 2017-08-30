@@ -199,9 +199,7 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
 
 declare function vadar:_words_plus_punc($text as xs:string) as map:map {
   let $no_punc_text := vadar:remove-punctuation($text)
-  let $words_only :=
-    fn:filter(function($x) { fn:string-length($x) gt 1 },
-      fn:tokenize($no_punc_text, " "))
+  let $words_only := vadar:remove-singeltons($text)
 
   return map:new(())
 };
@@ -232,4 +230,12 @@ declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
 
   return fn:filter($f(?), fn:tokenize($text, ' '))
 
+};
+
+declare function vadar:product($a , $b , $f as function(*)) {
+  (:~
+   : creates a cartesion product of $a and $b combined with the function $f
+   :)
+  for $x in $a, $y in $b
+  return $f($x,$y)
 };

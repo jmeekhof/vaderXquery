@@ -94,3 +94,26 @@ declare %test:case function remove-singeltons() {
   return
     assert:equal(string-join(vadar:remove-singeltons($sentence), ' '), $clean)
 };
+
+declare %test:case function product() {
+  let $f := function($a,$b) {
+    map:new( ( map:entry('seq', ($a,$b)) ) )
+  }
+  let $seq-a := ("a","b","c")
+  let $seq-1 := ("1","2","3")
+
+  let $expected := (
+    map:new (( map:entry('seq', ("a","1") ) )),
+    map:new (( map:entry('seq', ("a","2") ) )),
+    map:new (( map:entry('seq', ("a","3") ) )),
+    map:new (( map:entry('seq', ("b","1") ) )),
+    map:new (( map:entry('seq', ("b","2") ) )),
+    map:new (( map:entry('seq', ("b","3") ) )),
+    map:new (( map:entry('seq', ("c","1") ) )),
+    map:new (( map:entry('seq', ("c","2") ) )),
+    map:new (( map:entry('seq', ("c","3") ) ))
+  )
+
+  return
+    assert:equal(<debug>{vadar:product($seq-a, $seq-1, $f)}</debug>, <debug>{$expected}</debug>)
+};
