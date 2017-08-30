@@ -164,3 +164,31 @@ declare function allcap_differential($words as xs:string+) as xs:boolean {
     else
       fn:false()
 };
+
+declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double, $is_cap_diff as xs:boolean) as xs:double {
+  (:~
+   : Check if the preceding words increase, decrease, or negate/nullify the
+   : valence
+   :)
+  let $word_lower := fn:lower-case($word)
+
+  let $scalar :=
+    if (map:contains($vadar:BOOSTER_DICT, $word_lower) ) then
+      let $s := map:get($vadar:BOOSTER_DICT, $word_lower)
+      return
+        if ( $valence lt 0 ) then
+          $s * (-1)
+        else
+          $s
+    else
+      0.0
+  (:check if booster/dampener word is in ALLCAPS (while others aren't) :)
+  return
+    if ( fn:upper-case($word) = $word and $is_cap_diff) then
+      if ( $valence gt 0 ) then
+        $scalar + $vadar:C_INCR
+      else
+        $scalar - $vadar:C_INCR
+    else
+      $scalar
+};

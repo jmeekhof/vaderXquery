@@ -67,4 +67,14 @@ declare %test:case function allcap_differential() {
 
 };
 
+declare %test:case function scalar_inc_dec() {
+  let $neutral-word := "him"
+  let $pos-word := "absolutely"
+  let $neg-word := "barely"
 
+  return (
+    assert:equal( vadar:scalar_inc_dec($neutral-word, 0, fn:true()), 0 ),
+    assert:true( vadar:scalar_inc_dec($pos-word, 0, fn:true()) gt 0 ),
+    assert:true( vadar:scalar_inc_dec($neg-word, 0, fn:true()) lt 0 )
+  )
+};
