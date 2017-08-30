@@ -86,3 +86,11 @@ declare %test:case function remove-punctuation() {
   return
     assert:equal(vadar:remove-punctuation($sentence), $clean)
 };
+
+declare %test:case function remove-singeltons() {
+  let $sentence := "This is a sentence, with punctuation."
+  let $clean := "This is sentence, with punctuation."
+
+  return
+    assert:equal(string-join(vadar:remove-singeltons($sentence), ' '), $clean)
+};

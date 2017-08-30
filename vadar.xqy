@@ -197,21 +197,16 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
       $scalar
 };
 
-(:
-declare function _words_plus_punc($text as xs:string) as map:map {
-  let $no_punc_text :=
-    fn:string-join(
-      fn:filter(
-        function($x) {fn:not($x = (",",".",";","?","!",'"'))},
-        functx:chars($x)
-      )
-    )
+declare function vadar:_words_plus_punc($text as xs:string) as map:map {
+  let $no_punc_text := vadar:remove-punctuation($text)
+  let $words_only :=
+    fn:filter(function($x) { fn:string-length($x) gt 1 },
+      fn:tokenize($no_punc_text, " "))
 
   return map:new(())
 };
-:)
 
-declare function remove-punctuation( $text as xs:string) as xs:string {
+declare function vadar:remove-punctuation( $text as xs:string) as xs:string {
   (:~
    : Removes standard punctuation from a string of text.
    :)
@@ -223,4 +218,18 @@ declare function remove-punctuation( $text as xs:string) as xs:string {
     fn:string-join(
       fn:filter($f(?), functx:chars($text))
     )
+};
+
+declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
+  (:~
+   : Removes singletons from a string
+   :
+   : Returns a sequence of strings with singletons removed
+   :)
+  let $f := function ($x) {
+    fn:string-length($x) gt 1
+  }
+
+  return fn:filter($f(?), fn:tokenize($text, ' '))
+
 };
