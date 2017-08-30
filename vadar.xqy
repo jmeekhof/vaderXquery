@@ -230,9 +230,14 @@ declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
 
   return fn:filter($f(?), fn:tokenize($text, ' '))
 
+
 };
 
-declare function vadar:product($a , $b , $f as function(*)) {
+declare function vadar:product(
+  $a as item()*,
+  $b as item()*,
+  $f as function(item()*, item()*) as item()*
+  ) as item()* {
   (:~
    : creates a cartesion product of $a and $b combined with the function $f
    :)
