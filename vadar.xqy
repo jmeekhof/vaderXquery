@@ -241,6 +241,15 @@ declare function vadar:product(
   (:~
    : creates a cartesion product of $a and $b combined with the function $f
    :)
-  for $x in $a, $y in $b
-  return $f($x,$y)
+  fn:map(
+    function($x){
+      fn:map(
+        function($y){
+          $f($x,$y)
+        },
+        $b
+      )
+    },
+    $a
+  )
 };
