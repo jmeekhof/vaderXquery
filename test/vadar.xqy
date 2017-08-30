@@ -51,3 +51,20 @@ declare %test:case function normalize () {
   )
 };
 
+declare %test:case function allcap_differential() {
+  let $small := "this is is in all small case"
+  let $sentence := "This is a normal sentence"
+  let $yell := "THIS IS SOMEONE YELLING"
+  let $emph := "This is SOMEONE attempting to EMPHASIZE something"
+
+  return
+    (
+    assert:false( vadar:allcap_differential(fn:tokenize($small, " "))),
+    assert:false( vadar:allcap_differential(fn:tokenize($sentence, ' '))),
+    assert:false( vadar:allcap_differential(fn:tokenize($yell, ' ') )),
+    assert:true( vadar:allcap_differential(fn:tokenize($emph, ' ') ))
+    )
+
+};
+
+

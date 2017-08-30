@@ -147,3 +147,20 @@ declare function normalize ($score as xs:double, $alpha as xs:double) {
       else
         $norm-score
 };
+
+declare function allcap_differential($words as xs:string+) as xs:boolean {
+  (:~
+   :  Check whether just some words in the input are ALL CAPS
+   :  param list words: The words to inspect
+   :  returns: `True` if some but not all items in `words` are ALL CAPS
+   :)
+  let $is-different := fn:false()
+  let $all-cap-words := fn:count( fn:filter(function($a) {$a = fn:upper-case($a)}, $words))
+  let $cap-differential := fn:count($words) - $all-cap-words
+
+  return
+    if ($cap-differential gt 0 and $cap-differential lt fn:count($words) ) then
+      fn:true()
+    else
+      fn:false()
+};
