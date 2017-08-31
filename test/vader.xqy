@@ -178,3 +178,17 @@ declare %test:case function determine-valence-cap() {
     assert:not-empty(vader:determine-valence-cap($cap, fn:false()), "")
   )
 };
+
+declare %test:case function create-word-structure() {
+  let $s := ("one","two","three","four")
+  let $xml := vader:create-word-structure($s)
+
+  return (
+    fn:map(function($x) {
+      assert:equal($xml/word[. = $x]/string(),$x)
+    },
+    $s
+    )
+  )
+};
+

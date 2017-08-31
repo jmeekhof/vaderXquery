@@ -307,13 +307,40 @@ declare function polarity_scores($text as xs:string)  {
 
 };
 
+declare function vader:create-word-structure($text as xs:string*) {
+  (:~
+   : takes a sequence of strings, creates a xml structure of the words
+   :)
+  element wrapper {
+    fn:map(
+      function($x){
+        element word { $x }
+      },
+      $text
+    )
+  }
+};
+
+(:
 declare function sentiment_valence($valence, $text, $item, $i, $sentiments) {
   let $is_cap_diff := vader:allcap_differential($text)
   let $words_and_emoticons := vader:_words_and_emoticons($text)
+  (:
   let $item_lowercase := fn:map(fn:lower-case(?), $words_and_emoticons)
+  :)
+  fn:map(
+    function($word) {
+      (:determine where $word is in text:)
+      ()
+
+    },
+    $text
+  )
+
   return ()
 
 };
+:)
 
 declare function vader:get-valence-measure($word as xs:string)  {
   (:~
