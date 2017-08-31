@@ -199,9 +199,42 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
 
 declare function vadar:_words_plus_punc($text as xs:string) as map:map {
   let $no_punc_text := vadar:remove-punctuation($text)
-  let $words_only := vadar:remove-singeltons($text)
+  let $words_only := vadar:remove-singeltons($no_punc_text)
 
-  return map:new(())
+  let $combinator := function ( $a, $b ) {
+    map:new( ( map:entry('seq', ($a,$b)) ) )
+  }
+
+  let $entry := function($m as map:map, $i as xs:integer, $key as function(*) ) {
+    map:entry($key(map:get($m,'seq')), map:get($m,'seq')[$i])
+  }
+
+  return
+    map:new((
+      vadar:product($vadar:PUNC_LIST, $words_only, $combinator) !
+      $entry(., 2, fn:string-join(?)),
+      vadar:product($words_only, $vadar:PUNC_LIST, $combinator) !
+      $entry(., 1, fn:string-join(?))
+    ))
+
+};
+
+declare function _words_and_emoticons($text as xs:string) as xs:string* {
+  (:~
+   : Removes leading and trailing punctuation.
+   : Leaves contractions and most emoticons
+   :)
+  let $wes := vadar:remove-singeltons($text)
+
+  let $f := function($map, $word) {
+    if ( map:contains($map, $word) ) then
+      map:get($map, $word)
+    else
+      $word
+  }
+
+  let $g := $f(vadar:_words_plus_punc($text), ?)
+  return fn:map($g(?), $wes)
 };
 
 declare function vadar:remove-punctuation( $text as xs:string) as xs:string {
@@ -229,8 +262,6 @@ declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
   }
 
   return fn:filter($f(?), fn:tokenize($text, ' '))
-
-
 };
 
 declare function vadar:product(

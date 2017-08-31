@@ -99,6 +99,9 @@ declare %test:case function product() {
   let $f := function($a,$b) {
     map:new( ( map:entry('seq', ($a,$b)) ) )
   }
+  let $f1 := function($a,$b) {
+    $a || "," || $b
+  }
   let $seq-a := ("a","b","c")
   let $seq-1 := ("1","2","3")
 
@@ -114,6 +117,41 @@ declare %test:case function product() {
     map:new (( map:entry('seq', ("c","3") ) ))
   )
 
+  let $expected1 := (
+    "a,1", "a,2", "a,3",
+    "b,1", "b,2", "b,3",
+    "c,1", "c,2", "c,3"
+  )
+
   return
-    assert:equal(<debug>{vadar:product($seq-a, $seq-1, $f)}</debug>, <debug>{$expected}</debug>)
+  (
+    assert:equal(<debug>{vadar:product($seq-a, $seq-1, $f)}</debug>, <debug>{$expected}</debug>),
+    assert:equal(<debug>{vadar:product($seq-a, $seq-1, $f1)}</debug>, <debug>{$expected1}</debug>)
+  )
+};
+
+declare %test:case function _words_plus_punc() {
+  let $sentence := "This is a sentence, with a dumb; and a dumber"
+
+  let $map := vadar:_words_plus_punc($sentence)
+
+  return
+  (
+    assert:true(map:contains($map, "sentence,")),
+    assert:not-empty($map)
+  )
+};
+
+declare %test:case function _words_and_emoticons() {
+  let $emot := "This is funny :-)"
+  let $sad := "I'm not a fun of this :-("
+  let $non := "This contains no emotion."
+  let $trailing := "This, by the way, contains trailing punctuation."
+
+  return (
+    assert:equal(fn:string-join(vadar:_words_and_emoticons($emot), " "), $emot),
+    assert:not-equal(fn:string-join(vadar:_words_and_emoticons($non), " "), $non),
+    assert:not-equal(fn:string-join(vadar:_words_and_emoticons($trailing), " "), $trailing)
+  )
+
 };
