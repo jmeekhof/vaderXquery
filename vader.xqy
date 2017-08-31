@@ -1,91 +1,91 @@
 xquery version "1.0-ml";
 
-module namespace vadar = "http://vadarSentiment/vadar";
+module namespace vader = "http://vaderSentiment/vader";
 import module namespace functx = "http://www.functx.com" at "/MarkLogic/functx/functx-1.0-nodoc-2007-01.xqy";
 
 
 (:Increase decrease based upon booster words:)
-declare variable $vadar:B_INCR as xs:double := 0.293;
-declare variable $vadar:B_DECR as xs:double := -0.293;
+declare variable $vader:B_INCR as xs:double := 0.293;
+declare variable $vader:B_DECR as xs:double := -0.293;
 (:Intensity increase do to CAPITALIZED words:)
-declare variable $vadar:C_INCR as xs:double := 0.733;
-declare variable $vadar:N_SCALAR as xs:double := -0.74;
+declare variable $vader:C_INCR as xs:double := 0.733;
+declare variable $vader:N_SCALAR as xs:double := -0.74;
 
-declare variable $vadar:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
-declare variable $vadar:NEGATE as xs:string+ :=  ("aint", "arent", "cannot", "cant", "couldnt", "darent", "didnt", "doesnt", "ain't", "aren't", "can't", "couldn't", "daren't", "didn't", "doesn't", "dont", "hadnt", "hasnt", "havent", "isnt", "mightnt", "mustnt", "neither", "don't", "hadn't", "hasn't", "haven't", "isn't", "mightn't", "mustn't", "neednt", "needn't", "never", "none", "nope", "nor", "not", "nothing", "nowhere", "oughtnt", "shant", "shouldnt", "uhuh", "wasnt", "werent", "oughtn't", "shan't", "shouldn't", "uh-uh", "wasn't", "weren't", "without", "wont", "wouldnt", "won't", "wouldn't", "rarely", "seldom", "despite");
+declare variable $vader:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
+declare variable $vader:NEGATE as xs:string+ :=  ("aint", "arent", "cannot", "cant", "couldnt", "darent", "didnt", "doesnt", "ain't", "aren't", "can't", "couldn't", "daren't", "didn't", "doesn't", "dont", "hadnt", "hasnt", "havent", "isnt", "mightnt", "mustnt", "neither", "don't", "hadn't", "hasn't", "haven't", "isn't", "mightn't", "mustn't", "neednt", "needn't", "never", "none", "nope", "nor", "not", "nothing", "nowhere", "oughtnt", "shant", "shouldnt", "uhuh", "wasnt", "werent", "oughtn't", "shan't", "shouldn't", "uh-uh", "wasn't", "weren't", "without", "wont", "wouldnt", "won't", "wouldn't", "rarely", "seldom", "despite");
 
-declare variable $vadar:PUNC as xs:string+ := '!"#$%&#38;()*+,-./:;<=>?@[\\]^_`{|}~' || "'";
+declare variable $vader:PUNC as xs:string+ := '!"#$%&#38;()*+,-./:;<=>?@[\\]^_`{|}~' || "'";
 
-declare variable $vadar:BOOSTER_DICT as map:map := map:new( (
-  map:entry("absolutely", $vadar:B_INCR),
-  map:entry("amazingly", $vadar:B_INCR),
-  map:entry("awfully", $vadar:B_INCR),
-  map:entry("completely", $vadar:B_INCR),
-  map:entry("considerably", $vadar:B_INCR),
-  map:entry("decidedly", $vadar:B_INCR),
-  map:entry("deeply", $vadar:B_INCR),
-  map:entry("effing", $vadar:B_INCR),
-  map:entry("enormously", $vadar:B_INCR),
-  map:entry("entirely", $vadar:B_INCR),
-  map:entry("especially", $vadar:B_INCR),
-  map:entry("exceptionally", $vadar:B_INCR),
-  map:entry("extremely", $vadar:B_INCR),
-  map:entry("fabulously", $vadar:B_INCR),
-  map:entry("flipping", $vadar:B_INCR),
-  map:entry("flippin", $vadar:B_INCR),
-  map:entry("fricking", $vadar:B_INCR),
-  map:entry("frickin", $vadar:B_INCR),
-  map:entry("frigging", $vadar:B_INCR),
-  map:entry("friggin", $vadar:B_INCR),
-  map:entry("fully", $vadar:B_INCR),
-  map:entry("fucking", $vadar:B_INCR),
-  map:entry("greatly", $vadar:B_INCR),
-  map:entry("hella", $vadar:B_INCR),
-  map:entry("highly", $vadar:B_INCR),
-  map:entry("hugely", $vadar:B_INCR),
-  map:entry("incredibly", $vadar:B_INCR),
-  map:entry("intensely", $vadar:B_INCR),
-  map:entry("majorly", $vadar:B_INCR),
-  map:entry("more", $vadar:B_INCR),
-  map:entry("most", $vadar:B_INCR),
-  map:entry("particularly", $vadar:B_INCR),
-  map:entry("purely", $vadar:B_INCR),
-  map:entry("quite", $vadar:B_INCR),
-  map:entry("really", $vadar:B_INCR),
-  map:entry("remarkably", $vadar:B_INCR),
-  map:entry("so", $vadar:B_INCR),
-  map:entry("substantially", $vadar:B_INCR),
-  map:entry("thoroughly", $vadar:B_INCR),
-  map:entry("totally", $vadar:B_INCR),
-  map:entry("tremendously", $vadar:B_INCR),
-  map:entry("uber", $vadar:B_INCR),
-  map:entry("unbelievably", $vadar:B_INCR),
-  map:entry("unusually", $vadar:B_INCR),
-  map:entry("utterly", $vadar:B_INCR),
-  map:entry("very", $vadar:B_INCR),
-  map:entry("almost", $vadar:B_DECR),
-  map:entry("barely", $vadar:B_DECR),
-  map:entry("hardly", $vadar:B_DECR),
-  map:entry("just enough", $vadar:B_DECR),
-  map:entry("kind of", $vadar:B_DECR),
-  map:entry("kinda", $vadar:B_DECR),
-  map:entry("kindof", $vadar:B_DECR),
-  map:entry("kind-of", $vadar:B_DECR),
-  map:entry("less", $vadar:B_DECR),
-  map:entry("little", $vadar:B_DECR),
-  map:entry("marginally", $vadar:B_DECR),
-  map:entry("occasionally", $vadar:B_DECR),
-  map:entry("partly", $vadar:B_DECR),
-  map:entry("scarcely", $vadar:B_DECR),
-  map:entry("slightly", $vadar:B_DECR),
-  map:entry("somewhat", $vadar:B_DECR),
-  map:entry("sort of", $vadar:B_DECR),
-  map:entry("sorta", $vadar:B_DECR),
-  map:entry("sortof", $vadar:B_DECR),
-  map:entry("sort-of", $vadar:B_DECR)
+declare variable $vader:BOOSTER_DICT as map:map := map:new( (
+  map:entry("absolutely", $vader:B_INCR),
+  map:entry("amazingly", $vader:B_INCR),
+  map:entry("awfully", $vader:B_INCR),
+  map:entry("completely", $vader:B_INCR),
+  map:entry("considerably", $vader:B_INCR),
+  map:entry("decidedly", $vader:B_INCR),
+  map:entry("deeply", $vader:B_INCR),
+  map:entry("effing", $vader:B_INCR),
+  map:entry("enormously", $vader:B_INCR),
+  map:entry("entirely", $vader:B_INCR),
+  map:entry("especially", $vader:B_INCR),
+  map:entry("exceptionally", $vader:B_INCR),
+  map:entry("extremely", $vader:B_INCR),
+  map:entry("fabulously", $vader:B_INCR),
+  map:entry("flipping", $vader:B_INCR),
+  map:entry("flippin", $vader:B_INCR),
+  map:entry("fricking", $vader:B_INCR),
+  map:entry("frickin", $vader:B_INCR),
+  map:entry("frigging", $vader:B_INCR),
+  map:entry("friggin", $vader:B_INCR),
+  map:entry("fully", $vader:B_INCR),
+  map:entry("fucking", $vader:B_INCR),
+  map:entry("greatly", $vader:B_INCR),
+  map:entry("hella", $vader:B_INCR),
+  map:entry("highly", $vader:B_INCR),
+  map:entry("hugely", $vader:B_INCR),
+  map:entry("incredibly", $vader:B_INCR),
+  map:entry("intensely", $vader:B_INCR),
+  map:entry("majorly", $vader:B_INCR),
+  map:entry("more", $vader:B_INCR),
+  map:entry("most", $vader:B_INCR),
+  map:entry("particularly", $vader:B_INCR),
+  map:entry("purely", $vader:B_INCR),
+  map:entry("quite", $vader:B_INCR),
+  map:entry("really", $vader:B_INCR),
+  map:entry("remarkably", $vader:B_INCR),
+  map:entry("so", $vader:B_INCR),
+  map:entry("substantially", $vader:B_INCR),
+  map:entry("thoroughly", $vader:B_INCR),
+  map:entry("totally", $vader:B_INCR),
+  map:entry("tremendously", $vader:B_INCR),
+  map:entry("uber", $vader:B_INCR),
+  map:entry("unbelievably", $vader:B_INCR),
+  map:entry("unusually", $vader:B_INCR),
+  map:entry("utterly", $vader:B_INCR),
+  map:entry("very", $vader:B_INCR),
+  map:entry("almost", $vader:B_DECR),
+  map:entry("barely", $vader:B_DECR),
+  map:entry("hardly", $vader:B_DECR),
+  map:entry("just enough", $vader:B_DECR),
+  map:entry("kind of", $vader:B_DECR),
+  map:entry("kinda", $vader:B_DECR),
+  map:entry("kindof", $vader:B_DECR),
+  map:entry("kind-of", $vader:B_DECR),
+  map:entry("less", $vader:B_DECR),
+  map:entry("little", $vader:B_DECR),
+  map:entry("marginally", $vader:B_DECR),
+  map:entry("occasionally", $vader:B_DECR),
+  map:entry("partly", $vader:B_DECR),
+  map:entry("scarcely", $vader:B_DECR),
+  map:entry("slightly", $vader:B_DECR),
+  map:entry("somewhat", $vader:B_DECR),
+  map:entry("sort of", $vader:B_DECR),
+  map:entry("sorta", $vader:B_DECR),
+  map:entry("sortof", $vader:B_DECR),
+  map:entry("sort-of", $vader:B_DECR)
 ) );
 
-declare variable $vadar:SPECIAL_CASE_IDIOMS as map:map := map:new ((
+declare variable $vader:SPECIAL_CASE_IDIOMS as map:map := map:new ((
   map:entry("the shit", 3),
   map:entry("the bomb", 3),
   map:entry("bad ass", 1.5),
@@ -97,16 +97,16 @@ declare variable $vadar:SPECIAL_CASE_IDIOMS as map:map := map:new ((
 
 declare option xdmp:mapping "false";
 
-declare function vadar:negated ( $input-words as xs:string+ )  {
-  vadar:negated($input-words, fn:true())
+declare function vader:negated ( $input-words as xs:string+ )  {
+  vader:negated($input-words, fn:true())
 };
 
-declare function vadar:negated ( $input-words as xs:string+, $include-nt as xs:boolean) {
+declare function vader:negated ( $input-words as xs:string+, $include-nt as xs:boolean) {
 (:~
  : Determine if input words contain negation words
  :)
 
-  let $negated as xs:boolean := $input-words = $vadar:NEGATE
+  let $negated as xs:boolean := $input-words = $vader:NEGATE
   return
   if ( $negated ) then
     fn:true()
@@ -131,7 +131,7 @@ declare function vadar:negated ( $input-words as xs:string+, $include-nt as xs:b
 };
 
 declare function normalize ($score as xs:double) as xs:double {
-  vadar:normalize($score, xs:double(15))
+  vader:normalize($score, xs:double(15))
 };
 
 declare function normalize ($score as xs:double, $alpha as xs:double) {
@@ -169,7 +169,7 @@ declare function allcap_differential($words as xs:string+) as xs:boolean {
       fn:false()
 };
 
-declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double, $is_cap_diff as xs:boolean) as xs:double {
+declare function vader:scalar_inc_dec( $word as xs:string, $valence as xs:double, $is_cap_diff as xs:boolean) as xs:double {
   (:~
    : Check if the preceding words increase, decrease, or negate/nullify the
    : valence
@@ -177,8 +177,8 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
   let $word_lower := fn:lower-case($word)
 
   let $scalar :=
-    if (map:contains($vadar:BOOSTER_DICT, $word_lower) ) then
-      let $s := map:get($vadar:BOOSTER_DICT, $word_lower)
+    if (map:contains($vader:BOOSTER_DICT, $word_lower) ) then
+      let $s := map:get($vader:BOOSTER_DICT, $word_lower)
       return
         if ( $valence lt 0 ) then
           $s * (-1)
@@ -190,30 +190,33 @@ declare function vadar:scalar_inc_dec( $word as xs:string, $valence as xs:double
   return
     if ( fn:upper-case($word) = $word and $is_cap_diff) then
       if ( $valence gt 0 ) then
-        $scalar + $vadar:C_INCR
+        $scalar + $vader:C_INCR
       else
-        $scalar - $vadar:C_INCR
+        $scalar - $vader:C_INCR
     else
       $scalar
 };
 
-declare function vadar:_words_plus_punc($text as xs:string) as map:map {
-  let $no_punc_text := vadar:remove-punctuation($text)
-  let $words_only := vadar:remove-singeltons($no_punc_text)
+declare function vader:_words_plus_punc($text as xs:string) as map:map {
+  let $no_punc_text := vader:remove-punctuation($text)
+  let $words_only := vader:remove-singeltons($no_punc_text)
 
   let $combinator := function ( $a, $b ) {
-    map:new( ( map:entry('seq', ($a,$b)) ) )
+    element seq {
+      element itm { $a },
+      element itm { $b }
+    }
   }
 
-  let $entry := function($m as map:map, $i as xs:integer, $key as function(*) ) {
-    map:entry($key(map:get($m,'seq')), map:get($m,'seq')[$i])
+  let $entry := function ($m as element(), $i as xs:integer, $key as function(*) ) {
+    map:entry($key($m/itm), $m/itm[$i])
   }
 
   return
     map:new((
-      vadar:product($vadar:PUNC_LIST, $words_only, $combinator) !
+      vader:product($vader:PUNC_LIST, $words_only, $combinator) !
       $entry(., 2, fn:string-join(?)),
-      vadar:product($words_only, $vadar:PUNC_LIST, $combinator) !
+      vader:product($words_only, $vader:PUNC_LIST, $combinator) !
       $entry(., 1, fn:string-join(?))
     ))
 
@@ -224,7 +227,7 @@ declare function _words_and_emoticons($text as xs:string) as xs:string* {
    : Removes leading and trailing punctuation.
    : Leaves contractions and most emoticons
    :)
-  let $wes := vadar:remove-singeltons($text)
+  let $wes := vader:remove-singeltons($text)
 
   let $f := function($map, $word) {
     if ( map:contains($map, $word) ) then
@@ -233,16 +236,16 @@ declare function _words_and_emoticons($text as xs:string) as xs:string* {
       $word
   }
 
-  let $g := $f(vadar:_words_plus_punc($text), ?)
+  let $g := $f(vader:_words_plus_punc($text), ?)
   return fn:map($g(?), $wes)
 };
 
-declare function vadar:remove-punctuation( $text as xs:string) as xs:string {
+declare function vader:remove-punctuation( $text as xs:string) as xs:string {
   (:~
    : Removes standard punctuation from a string of text.
    :)
   let $f := function($x) {
-    fn:not($x = functx:chars($vadar:PUNC))
+    fn:not($x = functx:chars($vader:PUNC))
   }
 
   return
@@ -251,7 +254,7 @@ declare function vadar:remove-punctuation( $text as xs:string) as xs:string {
     )
 };
 
-declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
+declare function vader:remove-singeltons( $text as xs:string) as xs:string* {
   (:~
    : Removes singletons from a string
    :
@@ -264,7 +267,7 @@ declare function vadar:remove-singeltons( $text as xs:string) as xs:string* {
   return fn:filter($f(?), fn:tokenize($text, ' '))
 };
 
-declare function vadar:product(
+declare function vader:product(
   $a as item()*,
   $b as item()*,
   $f as function(item()*, item()*) as item()*
