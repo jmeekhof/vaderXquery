@@ -287,3 +287,60 @@ declare function vader:product(
     $a
   )
 };
+
+declare function polarity_scores($text as xs:string)  {
+  (:~
+   : Return a float for sentiment strength based on the input text.
+   : Positive values are positive valence, negative value are negative valence.
+   :
+   : TODO: Come back after sentiment_valence
+   :)
+   let $words_and_emoticons := vader:_words_and_emoticons($text)
+
+   let $sentiments := fn:map(
+    function ($x) {
+      ()
+    },
+    $words_and_emoticons)
+
+  return ()
+
+};
+
+declare function sentiment_valence($valence, $text, $item, $i, $sentiments) {
+  let $is_cap_diff := vader:allcap_differential($text)
+  let $words_and_emoticons := vader:_words_and_emoticons($text)
+  let $item_lowercase := fn:map(fn:lower-case(?), $words_and_emoticons)
+  return ()
+
+};
+
+declare function vader:get-valence-measure($word as xs:string)  {
+  (:~
+   : Retrieves the valence measure from the vader-lexicon
+   :)
+  fn:collection('vader-lexicon')/vader:lexicon/
+  vader:lex[vader:word =$word]/vader:measure/data() !
+  xs:float(.)
+};
+
+declare function vader:determine-valence-cap($word as xs:string, $is_cap_diff as xs:boolean) {
+  (:~
+   : Valence may be modified if it's capitalized. This function determines
+   : that.
+   :)
+  let $valence := vader:get-valence-measure(fn:lower-case($word))
+
+  return
+    if ($valence gt 0) then
+      $valence + (
+        if ( $is_cap_diff and ( $word = fn:upper-case($word) ) ) then
+          $vader:C_INCR
+        else
+          $vader:C_INCR * -1
+      )
+    else
+      $valence
+
+
+};
