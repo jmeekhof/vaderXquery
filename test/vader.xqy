@@ -192,3 +192,17 @@ declare %test:case function create-word-structure() {
   )
 };
 
+declare %test:case function determine-word-position() {
+  let $s := ("one","two","three","four")
+  let $ws := vader:create-word-structure($s)
+
+  let $one := "one"
+  let $four := "four"
+
+  let $dwp := vader:determine-word-position(?, $ws)
+
+  return (
+    assert:equal($dwp($one), 1),
+    assert:equal($dwp($four), 4)
+  )
+};

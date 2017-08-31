@@ -321,26 +321,37 @@ declare function vader:create-word-structure($text as xs:string*) {
   }
 };
 
-(:
+declare function vader:determine-word-position(
+  $word as xs:string,
+  $words-xml as element(wrapper)) {
+  (:~
+   : Take the $word,  find it in wrapper, return it's position in the document
+   :)
+  fn:count(
+    $words-xml/word[ . = $word]/preceding-sibling::*
+  ) + 1
+};
+
 declare function sentiment_valence($valence, $text, $item, $i, $sentiments) {
   let $is_cap_diff := vader:allcap_differential($text)
   let $words_and_emoticons := vader:_words_and_emoticons($text)
-  (:
-  let $item_lowercase := fn:map(fn:lower-case(?), $words_and_emoticons)
-  :)
-  fn:map(
-    function($word) {
-      (:determine where $word is in text:)
-      ()
 
-    },
-    $text
-  )
+  (: The sentiment analysis depends upon knowing the proximity of words with
+   : other words. A simple sequence doesn't give us this very easily. Creating
+   : an xml structure give us acces to xpath axes.
+   :)
+  let $words-xml := vader:create-word-structure($words_and_emoticons)
+
+  (: Look at all the words, and if the there are preceding words in the text,
+   : see if they affect the analysis
+   :)
+
+
+
 
   return ()
 
 };
-:)
 
 declare function vader:get-valence-measure($word as xs:string)  {
   (:~
