@@ -240,3 +240,11 @@ declare %test:case function sentiment_valence() {
   )
 };
 
+declare %test:case function _but_check() {
+  let $sentence := vader:_words_and_emoticons("This is good, but that is better")
+  let $sentiments := (2,2,2,1,2,2)
+
+  let $modified := vader:_but_check($sentence, $sentiments)
+
+  return assert:not-equal($modified, $sentiments)
+};

@@ -439,3 +439,26 @@ declare function vader:_least_check($valence, $words_and_emoticons, $i) {
         $valence
 };
 
+declare function vader:_but_check($words_and_emoticons as xs:string*, $sentiments as xs:float*) {
+  (:~
+   : check for modification in sentiment due to contrastive conjunction 'but'
+   :)
+
+  let $f := fn:index-of($words_and_emoticons, ?)
+  let $bi := fn:map($f(?), ('but','BUT'))[1]
+  return
+    if ( fn:exists($bi) ) then
+      (: look for the sentiments before and after the but :)
+      let $ws := vader:create-word-structure($words_and_emoticons)
+      (: all the preceding items get their sentiments lowered :)
+      let $preceding-i := $ws/word[$bi]/preceding-sibling::*/fn:position()
+      (: all the following items get their sentiments raised :)
+      let $following-i := $ws/word[$bi]/following-sibling::*/fn:position()
+      return (
+        fn:map(function($pos) { $sentiments[$pos] * 0.5 }, $preceding-i),
+        $sentiments[$bi],
+        fn:map(function($pos) { $sentiments[$pos] * 1.5}, $following-i)
+      )
+    else
+      $sentiments
+};
