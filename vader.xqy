@@ -2,6 +2,7 @@ xquery version "1.0-ml";
 
 module namespace vader = "http://vaderSentiment/vader";
 import module namespace functx = "http://www.functx.com" at "/MarkLogic/functx/functx-1.0-nodoc-2007-01.xqy";
+import module namespace func = "http://snelson.org.uk/functions/functional" at "functionalxq/functional.xq";
 
 
 (:Increase decrease based upon booster words:)
@@ -326,13 +327,15 @@ declare function vader:determine-word-position(
   $words-xml as element(wrapper)) {
   (:~
    : Take the $word,  find it in wrapper, return it's position in the document
+   : This won't work correctly if the same word occurs more than once in a
+   : sentence.
    :)
   fn:count(
     $words-xml/word[ . = $word]/preceding-sibling::*
   ) + 1
 };
 
-declare function sentiment_valence($valence, $text, $item, $i, $sentiments) {
+declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments) {
   let $is_cap_diff := vader:allcap_differential($text)
   let $words_and_emoticons := vader:_words_and_emoticons($text)
 
@@ -345,11 +348,33 @@ declare function sentiment_valence($valence, $text, $item, $i, $sentiments) {
   (: Look at all the words, and if the there are preceding words in the text,
    : see if they affect the analysis
    :)
+  let $dwp := vader:determine-word-position(?, $words-xml)
+
+  let $valence :=
+    fn:map(function($word) {
+      let $pos := fn:count($word/preceding-sibling::*) + 1
+      let $s := fn:map(function($pre) {
+        if ($pos gt $pre and
+          fn:not(
+            fn:exists(
+              vader:get-valence-measure(
+                fn:lower-case($words-xml/word[$pos - ($pre + 1)])
+              )
+            )
+          )
+        ) then
+          $pre
+        else
+          0
+      },
+      (1 to 4))
+      return $pos
+    }
+    ,$words-xml/word)
 
 
 
-
-  return ()
+  return $valence
 
 };
 
@@ -379,6 +404,38 @@ declare function vader:determine-valence-cap($word as xs:string, $is_cap_diff as
       )
     else
       $valence
-
-
 };
+
+declare function vader:exists-in-lexicon($word as xs:string) as xs:boolean {
+  let $f := func:compose(fn:exists#1,vader:get-valence-measure#1,fn:lower-case#1)
+  return $f($word)
+};
+
+declare function vader:_least_check($valence, $words_and_emoticons, $i) {
+  (:~
+   : Makes a negation check by looking for the word 'least'
+   :)
+
+  let $chk := func:compose(fn:not#1,vader:exists-in-lexicon#1)
+  return
+    if (
+      $i gt 2 and
+      $chk($words_and_emoticons[$i - 1]) and
+      fn:lower-case($words_and_emoticons[$i - 1]) = "least"
+    ) then
+
+      if (fn:not(fn:lower-case($words_and_emoticons[$i - 2]) = ("at","very"))) then
+        $valence * $vader:N_SCALAR
+      else
+        $valence
+    else
+      if (
+        $i gt 1 and
+        $chk($words_and_emoticons[$i - 1]) and
+        fn:lower-case($words_and_emoticons[$i - 1]) = "least"
+      ) then
+        $valence * $vader:N_SCALAR
+      else
+        $valence
+};
+

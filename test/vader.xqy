@@ -2,6 +2,7 @@ xquery version "1.0-ml";
 module namespace test = "http://github.com/robwhitby/xray/test";
 import module namespace assert = "http://github.com/robwhitby/xray/assertions" at "/xray/src/assertions.xqy";
 import module namespace vader = "http://vaderSentiment/vader" at "../vader.xqy";
+import module namespace func = "http://snelson.org.uk/functions/functional" at "../functionalxq/functional.xq";
 
 declare option xdmp:mapping "false";
 
@@ -156,6 +157,30 @@ declare %test:case function _words_and_emoticons() {
 
 };
 
+declare %test:case  function exists-in-lexicon() {
+  let $x := "Accident" (:in the lexicon, therfore true:)
+  let $y := "there" (:not in the lexicon, therefore false :)
+
+  return (
+    assert:false(vader:exists-in-lexicon($y)),
+    assert:true(vader:exists-in-lexicon($x)),
+    ()
+  )
+};
+
+declare %test:case function _least_check() {
+  let $x := vader:_words_and_emoticons("This is a sentence.")
+
+  let $emot := vader:_words_and_emoticons(
+  "My least favorite thing is Microsoft Word.")
+  let $f := vader:_least_check(2.5, $emot, ?)
+  return (
+    assert:not-empty(
+    fn:map($f(?), (1 to fn:count($emot))), ""),
+    assert:true( $f(3) lt 2.5, "The third word should be lowered because it's preceded by 'least'")
+  )
+};
+
 declare %test:case function get-valence-measure() {
   let $word := "((-:"
 
@@ -206,3 +231,12 @@ declare %test:case function determine-word-position() {
     assert:equal($dwp($four), 4)
   )
 };
+
+declare %test:case function sentiment_valence() {
+  let $t := "this is some awesome text"
+
+  return (
+    assert:equal(vader:sentiment_valence((), $t, (), (), () ), "" )
+  )
+};
+
