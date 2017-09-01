@@ -462,3 +462,10 @@ declare function vader:_but_check($words_and_emoticons as xs:string*, $sentiment
     else
       $sentiments
 };
+
+declare function vader:_idioms_check($valence as xs:float, $words_and_emoticons as xs:string*, $i as xs:integer) {
+  (:~
+   : Need to implement
+   :)
+  $valence
+};

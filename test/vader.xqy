@@ -248,3 +248,7 @@ declare %test:case function _but_check() {
 
   return assert:not-equal($modified, $sentiments)
 };
+
+declare %test:case %test:ignore function _idioms_check(){
+  ()
+};
