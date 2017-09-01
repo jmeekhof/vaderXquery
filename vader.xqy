@@ -469,3 +469,59 @@ declare function vader:_idioms_check($valence as xs:float, $words_and_emoticons 
    :)
   $valence
 };
+
+declare function vader:_never_check(
+  $valence as xs:float, $words_and_emoticons as xs:string*,
+  $start_i as xs:integer, $i as xs:integer) {
+  let $n := "never"
+  let $st := ("so","this")
+  return
+  switch ($start_i)
+    case 1 return
+      if (vader:negated($words_and_emoticons[$i - 1]) ) then
+        $valence * $vader:N_SCALAR
+      else
+        $valence
+
+    case 2 return
+      if ( $words_and_emoticons[$i - 2] = $n and $words_and_emoticons[$i - 1] = $st) then
+        $valence * 1.5
+      else
+        (: this needs some work. This is using the pypthon list syntax where
+         : negative numbers give you the last x items in the list
+         :)
+        if ( vader:negated($words_and_emoticons[$i - ($start_i + 1)]) ) then
+          $valence * $vader:N_SCALAR
+        else
+          $valence
+
+    case 3 return
+      if (
+        $words_and_emoticons[$i - 3] = $n and
+        $words_and_emoticons[$i - 2] = $st or
+        $words_and_emoticons[$i - 1] = $st
+      ) then
+        $valence * 1.25
+      else
+        (: this needs some work. This is using the pypthon list syntax where
+         : negative numbers give you the last x items in the list
+         :)
+        if ( vader:negated($words_and_emoticons[$i - ($start_i + 1)] ) ) then
+          $valence * $vader:N_SCALAR
+        else
+          $valence
+
+    default return
+      $valence
+
+(:
+            if ( $start_i = 3) then
+            else
+              $valence
+        else
+          $valance
+:)
+
+};
+
+

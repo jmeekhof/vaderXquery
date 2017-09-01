@@ -252,3 +252,23 @@ declare %test:case function _but_check() {
 declare %test:case %test:ignore function _idioms_check(){
   ()
 };
+
+declare %test:case function _never_check() {
+  let $v := 10.0
+  let $wae1 := vader:_words_and_emoticons(
+    "this should be neutral")
+  let $wae2 := vader:_words_and_emoticons(
+    "this should never work")
+
+  return (
+    assert:equal(vader:_never_check($v, $wae1,  1, 3), "")
+  (:
+    fn:map(function($s) {
+      fn:map(function($start_i){
+        assert:equal(vader:_never_check($v,$s, $start_i, 3), "")
+      },
+      (1 to 3))},
+    ($wae1,$wae2))
+  :)
+  )
+};
