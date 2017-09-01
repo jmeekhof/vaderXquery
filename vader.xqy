@@ -513,15 +513,6 @@ declare function vader:_never_check(
 
     default return
       $valence
-
-(:
-            if ( $start_i = 3) then
-            else
-              $valence
-        else
-          $valance
-:)
-
 };
 
 
