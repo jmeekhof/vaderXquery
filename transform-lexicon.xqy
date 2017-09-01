@@ -28,7 +28,7 @@ declare function vt:transform(
     )
   }
 
-  let $line-handler := function ( $item, $items ) {
+  let $line-handler := function ( $item as item(), $items as item()* ) as item()* {
     $lex-builder($item),$items
   }
 
@@ -37,10 +37,12 @@ declare function vt:transform(
       fn:fold-right($line-handler(?,?), (), $lines)
     }
 
-  let $c := (map:get($context,"collections"),"vader-lexicon")
-  let $_ := map:put($context,'collections', $c)
-
   return
-    map:put($content, "value", $doc),
-    $content
+    xdmp:document-insert(
+      map:get($content, "uri"),
+      $doc,
+      xdmp:default-permissions(),
+      (map:get($context,"collections"),"vader-lexicon")
+    ),
+    map:map()
 };

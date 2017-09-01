@@ -6,7 +6,7 @@ import module namespace vader = "http://vaderSentiment/vader" at "../vader.xqy";
 
 declare option xdmp:mapping "false";
 
-declare %test:case function transform ()
+declare %test:case %test:ignore function transform ()
 {
 
   let $doc :=
