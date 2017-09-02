@@ -150,9 +150,9 @@ declare %test:case function _words_and_emoticons() {
   let $trailing := "This, by the way, contains trailing punctuation."
 
   return (
-    assert:equal(fn:string-join(vader:_words_and_emoticons($emot), " "), $emot),
-    assert:not-equal(fn:string-join(vader:_words_and_emoticons($non), " "), $non),
-    assert:not-equal(fn:string-join(vader:_words_and_emoticons($trailing), " "), $trailing)
+    assert:equal(fn:string-join(vader:_words_and_emoticons($emot)/word, " "), $emot),
+    assert:not-equal(fn:string-join(vader:_words_and_emoticons($non)/word, " "), $non),
+    assert:not-equal(fn:string-join(vader:_words_and_emoticons($trailing)/word, " "), $trailing)
   )
 
 };
