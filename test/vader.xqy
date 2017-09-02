@@ -255,20 +255,37 @@ declare %test:case %test:ignore function _idioms_check(){
 
 declare %test:case function _never_check() {
   let $v := 10.0
-  let $wae1 := vader:_words_and_emoticons(
-    "this should be neutral")
-  let $wae2 := vader:_words_and_emoticons(
-    "this should never work")
+  let $wae1 :=
+    "this should be neutral"
+  let $wae2 :=
+    "this should never work"
 
   return (
-    assert:equal(vader:_never_check($v, $wae1,  1, 3), "")
-  (:
-    fn:map(function($s) {
+    (:assert:equal(vader:_never_check($v, $wae1,  1, 3), ""),
+    assert:equal(vader:_never_check($v, $wae2,  1, 3), ""),:)
+    fn:map(function($sentence) {
+      let $s := vader:_words_and_emoticons($sentence)
+      return
       fn:map(function($start_i){
-        assert:equal(vader:_never_check($v,$s, $start_i, 3), "")
+        fn:map(function($i){
+          assert:not-empty(
+            vader:_never_check($v,$s, $start_i, $i),
+            string-join((xs:string($v),$s,xs:string($start_i),xs:string($i)),":"))
+        },(1 to fn:count($s)) )
       },
       (1 to 3))},
     ($wae1,$wae2))
-  :)
   )
+};
+
+declare %test:case function _amplify_ep() {
+  let $s := "This is totally awesome!!!"
+
+  return assert:not-empty(vader:_amplify_ep($s), "")
+};
+
+declare %test:case function _amplify_qm() {
+  let $s := "This is totally awesome???"
+
+  return assert:not-empty(vader:_amplify_qm($s), "")
 };

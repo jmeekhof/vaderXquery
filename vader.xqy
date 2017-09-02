@@ -98,11 +98,11 @@ declare variable $vader:SPECIAL_CASE_IDIOMS as map:map := map:new ((
 
 declare option xdmp:mapping "false";
 
-declare function vader:negated ( $input-words as xs:string+ )  {
+declare function vader:negated ( $input-words as xs:string* )  {
   vader:negated($input-words, fn:true())
 };
 
-declare function vader:negated ( $input-words as xs:string+, $include-nt as xs:boolean) {
+declare function vader:negated ( $input-words as xs:string*, $include-nt as xs:boolean) {
 (:~
  : Determine if input words contain negation words
  :)
@@ -515,4 +515,32 @@ declare function vader:_never_check(
       $valence
 };
 
+declare function vader:_amplify_ep($text as xs:string) as xs:float {
+  (:~
+   : count exclamation points, up to 4. Retrun a booster based upon that.
+   :)
+  let $ep := fn:index-of(?, "!")
+  let $f := func:compose(fn:count#1,$ep,functx:chars#1)
 
+  return fn:min(($f($text),4)) * 0.292
+};
+
+declare function vader:_amplify_qm($text as xs:string) as xs:float {
+  let $qm := fn:index-of(?, "?")
+  let $f := func:compose(fn:count#1,$qm,functx:chars#1)
+
+  let $qm-count := $f($text)
+
+  return
+    if ( $qm-count > 1 ) then
+      if ( $qm-count <= 3 ) then
+        $qm-count * 0.18
+      else
+        0.96
+    else
+      0
+};
+
+declare function _punctuation_emphasis($text as xs:string) as xs:float {
+  vader:_amplify_ep($text) + vader:_amplify_qm($text)
+};
