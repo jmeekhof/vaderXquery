@@ -300,12 +300,26 @@ declare function polarity_scores($text as xs:string)  {
    let $wae := vader:_words_and_emoticons($text)
 
    let $sentiments := fn:map(
-    function ($x) {
+    function ($item) {
+      let $valence := 0
+      let $i := fn:count($item/preceding-sibling::*) + 1
+      (:
+      if (
+        (
+          fn:lower-case($x) = "kind" and
+          fn:lower-case($x/following-sibling::*[1]) = "of"
+        ) or
+        map:contains($vader:BOOSTER_DICT, fn:lower-case($x)  )
+      ) else
       ()
+      :)
+
+      return
+      vader:sentiment_valence(0, $text, $item, $i, () )
     },
     $wae)
 
-  return ()
+  return $sentiments
 
 };
 
@@ -352,6 +366,17 @@ declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments
 
   let $valence :=
     fn:map(function($word) {
+      let $v :=
+        let $x := vader:get-valence-measure(fn:lower-case($word))
+        return
+          if ( fn:upper-case($word) = $word and $is_cap_diff ) then
+            if ( $x gt 0 ) then
+              $x + $vader:C_INCR
+            else
+              $x - $vader:C_INCR
+          else
+            $x
+
       let $pos := fn:count($word/preceding-sibling::*) + 1
       let $s := fn:map(function($pre) {
         if ($pos gt $pre and
@@ -368,7 +393,11 @@ declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments
           0
       },
       (1 to 4))
-      return $pos
+
+
+      let $v1 := fn:sum(($v,$s))
+
+      return $v1
     }
     ,$wae/word)
 
