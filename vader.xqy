@@ -297,13 +297,13 @@ declare function polarity_scores($text as xs:string)  {
    :
    : TODO: Come back after sentiment_valence
    :)
-   let $words_and_emoticons := vader:_words_and_emoticons($text)
+   let $wae := vader:_words_and_emoticons($text)
 
    let $sentiments := fn:map(
     function ($x) {
       ()
     },
-    $words_and_emoticons)
+    $wae)
 
   return ()
 
@@ -338,18 +338,17 @@ declare function vader:determine-word-position(
 
 declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments) {
   let $is_cap_diff := vader:allcap_differential($text)
-  let $words_and_emoticons := vader:_words_and_emoticons($text)
+  let $wae:= vader:_words_and_emoticons($text)
 
   (: The sentiment analysis depends upon knowing the proximity of words with
    : other words. A simple sequence doesn't give us this very easily. Creating
    : an xml structure give us acces to xpath axes.
    :)
-  let $words-xml := $words_and_emoticons
 
   (: Look at all the words, and if the there are preceding words in the text,
    : see if they affect the analysis
    :)
-  let $dwp := vader:determine-word-position(?, $words-xml)
+  let $dwp := vader:determine-word-position(?, $wae)
 
   let $valence :=
     fn:map(function($word) {
@@ -359,7 +358,7 @@ declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments
           fn:not(
             fn:exists(
               vader:get-valence-measure(
-                fn:lower-case($words-xml/word[$pos - ($pre + 1)])
+                fn:lower-case($wae/word[$pos - ($pre + 1)])
               )
             )
           )
@@ -371,9 +370,7 @@ declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments
       (1 to 4))
       return $pos
     }
-    ,$words-xml/word)
-
-
+    ,$wae/word)
 
   return $valence
 
@@ -414,7 +411,7 @@ declare function vader:exists-in-lexicon($word as xs:string) as xs:boolean {
 
 declare function vader:_least_check(
   $valence as xs:float,
-  $words_and_emoticons as element(wrapper),
+  $wae as element(wrapper),
   $i as xs:integer) {
   (:~
    : Makes a negation check by looking for the word 'least'
@@ -424,36 +421,36 @@ declare function vader:_least_check(
   return
     if (
       $i gt 2 and
-      $chk($words_and_emoticons/word[$i - 1]) and
-      fn:lower-case($words_and_emoticons/word[$i - 1]) = "least"
+      $chk($wae/word[$i - 1]) and
+      fn:lower-case($wae/word[$i - 1]) = "least"
     ) then
 
-      if (fn:not(fn:lower-case($words_and_emoticons/word[$i - 2]) = ("at","very"))) then
+      if (fn:not(fn:lower-case($wae/word[$i - 2]) = ("at","very"))) then
         $valence * $vader:N_SCALAR
       else
         $valence
     else
       if (
         $i gt 1 and
-        $chk($words_and_emoticons/word[$i - 1]) and
-        fn:lower-case($words_and_emoticons/word[$i - 1]) = "least"
+        $chk($wae/word[$i - 1]) and
+        fn:lower-case($wae/word[$i - 1]) = "least"
       ) then
         $valence * $vader:N_SCALAR
       else
         $valence
 };
 
-declare function vader:_but_check($words_and_emoticons as element(wrapper), $sentiments as xs:float*) {
+declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:float*) {
   (:~
    : check for modification in sentiment due to contrastive conjunction 'but'
    :)
 
-  let $f := fn:index-of($words_and_emoticons/word, ?)
+  let $f := fn:index-of($wae/word, ?)
   let $bi := fn:map($f(?), ('but','BUT'))[1]
   return
     if ( fn:exists($bi) ) then
       (: look for the sentiments before and after the but :)
-      let $ws := $words_and_emoticons
+      let $ws := $wae
       (: all the preceding items get their sentiments lowered :)
       let $preceding-i := $ws/word[$bi]/preceding-sibling::*/fn:position()
       (: all the following items get their sentiments raised :)
@@ -467,7 +464,7 @@ declare function vader:_but_check($words_and_emoticons as element(wrapper), $sen
       $sentiments
 };
 
-declare function vader:_idioms_check($valence as xs:float, $words_and_emoticons as element(wrapper), $i as xs:integer) {
+declare function vader:_idioms_check($valence as xs:float, $wae as element(wrapper), $i as xs:integer) {
   (:~
    : Need to implement
    :)
@@ -475,42 +472,42 @@ declare function vader:_idioms_check($valence as xs:float, $words_and_emoticons 
 };
 
 declare function vader:_never_check(
-  $valence as xs:float, $words_and_emoticons as element(wrapper),
+  $valence as xs:float, $wae as element(wrapper),
   $start_i as xs:integer, $i as xs:integer) {
   let $n := "never"
   let $st := ("so","this")
   return
   switch ($start_i)
     case 1 return
-      if (vader:negated($words_and_emoticons/word[$i - 1]) ) then
+      if (vader:negated($wae/word[$i - 1]) ) then
         $valence * $vader:N_SCALAR
       else
         $valence
 
     case 2 return
-      if ( $words_and_emoticons/word[$i - 2] = $n and $words_and_emoticons/word[$i - 1] = $st) then
+      if ( $wae/word[$i - 2] = $n and $wae/word[$i - 1] = $st) then
         $valence * 1.5
       else
         (: this needs some work. This is using the pypthon list syntax where
          : negative numbers give you the last x items in the list
          :)
-        if ( vader:negated($words_and_emoticons/word[$i - ($start_i + 1)]) ) then
+        if ( vader:negated($wae/word[$i - ($start_i + 1)]) ) then
           $valence * $vader:N_SCALAR
         else
           $valence
 
     case 3 return
       if (
-        $words_and_emoticons/word[$i - 3] = $n and
-        $words_and_emoticons/word[$i - 2] = $st or
-        $words_and_emoticons/word[$i - 1] = $st
+        $wae/word[$i - 3] = $n and
+        $wae/word[$i - 2] = $st or
+        $wae/word[$i - 1] = $st
       ) then
         $valence * 1.25
       else
         (: this needs some work. This is using the pypthon list syntax where
          : negative numbers give you the last x items in the list
          :)
-        if ( vader:negated($words_and_emoticons/word[$i - ($start_i + 1)] ) ) then
+        if ( vader:negated($wae/word[$i - ($start_i + 1)] ) ) then
           $valence * $vader:N_SCALAR
         else
           $valence
@@ -545,6 +542,55 @@ declare function vader:_amplify_qm($text as xs:string) as xs:float {
       0
 };
 
-declare function _punctuation_emphasis($text as xs:string) as xs:float {
+declare function vader:_punctuation_emphasis($text as xs:string) as xs:float {
   vader:_amplify_ep($text) + vader:_amplify_qm($text)
+};
+
+declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map:map {
+  map:new((
+    map:entry(
+      'pos',
+      fn:fold-right(
+        function( $score as xs:float, $scores as xs:float* ) {
+          $scores + (
+            if ( $score gt 0 ) then
+              $score + 1
+            else
+              0
+          )
+        },
+        0.0,
+        $sentiments)
+    ),
+    map:entry(
+      'neg',
+      fn:fold-right(
+        function($score as xs:float, $scores as xs:float*){
+          $scores + (
+            if ($score lt 0) then
+              $score - 1
+            else
+              0
+          )
+        },
+        0.0,
+        $sentiments)
+    ),
+    map:entry(
+      'neu',
+      fn:fold-right(
+        function($score as xs:float, $scores as xs:float*){
+          $scores + (
+            if ($score = 0) then
+              1
+            else
+              0
+          )
+        },
+        0,
+        $sentiments)
+    )
+
+  ))
+
 };
