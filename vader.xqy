@@ -594,3 +594,72 @@ declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map
   ))
 
 };
+
+declare function vader:score_valence ( $sentiments as xs:float*, $text as xs:string) {
+  (:~
+   : Need to compute multiple scores and return as map:map
+   :)
+
+
+  let $f := function($map as map:map, $amp as xs:float) {
+    let $p := map:get($map, 'pos')
+    let $n := map:get($map, 'neg')
+
+    return
+      if ( $p gt math:fabs($n) ) then
+        map:put($map, 'pos', ( $p + $amp))
+      else if ( $p lt math:fabs($n) ) then
+        map:put($map, 'neg', ( $p - $amp))
+      else
+        ()
+  }
+
+  let $sifted := vader:_sift_sentiment_scores($sentiments)
+  let $punc_emph_amplipher := vader:_punctuation_emphasis($text)
+  let $_ := $f($sifted, $punc_emph_amplipher)
+  let $pos_sum := map:get($sifted, 'pos')
+  let $neg_sum := map:get($sifted, 'neg')
+  let $neu_count := map:get($sifted, 'neu')
+  let $sum_s :=
+    let $sum := fn:sum($sentiments)
+    return
+      if ( $sum gt 0 ) then
+        $sum + $punc_emph_amplipher
+      else if ( $sum lt 0 ) then
+        $sum - $punc_emph_amplipher
+      else
+        $sum
+
+
+  let $total := $pos_sum + math:fabs($neg_sum) + $neu_count
+
+  let $pos :=
+    if ( fn:exists($sentiments) ) then
+      math:fabs($pos_sum div $total)
+    else
+      0.0
+  let $neg :=
+    if ( fn:exists($sentiments) ) then
+      math:fabs($neg_sum div $total)
+    else
+      0.0
+  let $neu :=
+    if ( fn:exists($sentiments) ) then
+      math:fabs($neu_count div $total)
+    else
+      0.0
+
+  let $compound :=
+    if ( fn:exists($sentiments) ) then
+      vader:normalize($sum_s)
+    else
+      0.0
+
+  let $r := fn:format-number(?,"#.###")
+  return map:new((
+    map:entry("neg", $r($neg)),
+    map:entry("pos", $r($pos)),
+    map:entry("neu", $r($neu)),
+    map:entry("compound", fn:format-number($compound, "#.####"))
+  ))
+};

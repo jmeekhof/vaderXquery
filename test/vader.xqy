@@ -297,3 +297,11 @@ declare %test:case function _sift_sentiment_scores() {
     assert:not-empty(vader:_sift_sentiment_scores($scores) )
   )
 };
+
+declare %test:case function score_valence() {
+  let $x := (1,2,3,3,2,1)
+
+  let $s := "one two three three two one"
+
+  return assert:not-empty(vader:score_valence($x, $s))
+};
