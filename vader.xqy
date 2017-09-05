@@ -299,27 +299,23 @@ declare function polarity_scores($text as xs:string)  {
    :)
    let $wae := vader:_words_and_emoticons($text)
 
-   let $sentiments := fn:map(
-    function ($item) {
-      let $valence := 0
-      let $i := fn:count($item/preceding-sibling::*) + 1
-      (:
-      if (
-        (
-          fn:lower-case($x) = "kind" and
-          fn:lower-case($x/following-sibling::*[1]) = "of"
-        ) or
-        map:contains($vader:BOOSTER_DICT, fn:lower-case($x)  )
-      ) else
-      ()
-      :)
+   let $sentiments as xs:float* :=
+     fn:map(
+       function ($item) {
+        if (
+          (
+            fn:lower-case($item) = "kind" and fn:lower-case($item/following-sibling::*[1]) = "of"
+          ) or map:contains($vader:BOOSTER_DICT, fn:lower-case($item))
+        ) then
+          0
+        else
+          vader:sentiment_valence(0, $text, $item, (), () )
+      },
+      $wae)
 
-      return
-      vader:sentiment_valence(0, $text, $item, $i, () )
-    },
-    $wae)
+  let $b_check := vader:_but_check($wae, $sentiments)
 
-  return $sentiments
+  return vader:score_valence($b_check, $text)
 
 };
 
