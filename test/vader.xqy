@@ -294,6 +294,6 @@ declare %test:case function _sift_sentiment_scores() {
   let $scores := (-1.0, -1.5, 0, 1,  1.5)
 
   return (
-    assert:equal(vader:_sift_sentiment_scores($scores), '')
+    assert:not-empty(vader:_sift_sentiment_scores($scores) )
   )
 };
