@@ -33,10 +33,10 @@ declare %test:case function  negated-test-least ()
 declare %test:case function  negated-test-least-again ()
 {
   let $string3 := "I like you the least yet the least"
-  let $string1 := "at least your are good "
+  let $string1 := "i at least think you are good "
   return (
     assert:false(vader:negated(fn:tokenize($string3, " "))),
-    assert:true(vader:negated(fn:tokenize($string1, " ")))
+    assert:false(vader:negated(fn:tokenize($string1, " ")))
     )
 };
 
@@ -233,12 +233,10 @@ declare %test:case function determine-word-position() {
 };
 
 declare %test:case function sentiment_valence() {
-  let $t := vader:_words_and_emoticons("this is some awesome text")
-  let $n := vader:_words_and_emoticons("this is not awesome text")
+  let $t := "this is some awesome text"
 
   return (
-    assert:equal(vader:sentiment_valence($t), "", fn:string-join($t/word, " ") ),
-    assert:equal(vader:sentiment_valence($n), "", fn:string-join($n/word, " ") )
+    assert:equal(vader:sentiment_valence((), $t, (), (), () ), "" )
   )
 };
 
@@ -298,36 +296,4 @@ declare %test:case function _sift_sentiment_scores() {
   return (
     assert:not-empty(vader:_sift_sentiment_scores($scores) )
   )
-};
-
-declare %test:case function score_valence() {
-  let $x := (1,2,3,3,2,1)
-
-  let $s := "one two three three two one"
-
-  return assert:not-empty(vader:score_valence($x, $s))
-};
-
-declare %test:case function end-to-end() {
-  let $sentences := (
-    "VADER is smart, handsome, and funny.",      (: positive sentence example:)
-    "VADER is not smart, handsome, nor funny.",  (: # negation sentence example:)
-    "VADER is smart, handsome, and funny!",       (:# punctuation emphasis handled correctly (sentiment intensity adjusted):)
-    "VADER is very smart, handsome, and funny.", (: # booster words handled correctly (sentiment intensity adjusted):)
-    "VADER is VERY SMART, handsome, and FUNNY.", (: # emphasis for ALLCAPS handled:)
-    "VADER is VERY SMART, handsome, and FUNNY!!!",(:# combination of signals - VADER appropriately adjusts intensity:)
-    "VADER is VERY SMART, uber handsome, and FRIGGIN FUNNY!!!",(:# booster words & punctuation make this close to ceiling for score:)
-    "The book was good.",         (:# positive sentence:)
-    "The book was kind of good.", (:# qualified positive sentence is handled correctly (intensity adjusted):)
-    "The plot was good, but the characters are uncompelling and the dialog is not great.", (:# mixed negation sentence:)
-    "At least it isn't a horrible book.", (:# negated negative sentence with contraction:)
-    "Make sure you :) or :D today!",     (:# emoticons handled:)
-    "Today SUX!",    (:#  negative slang with capitalization emphasis:)
-    "Today only kinda sux! But I'll get by, lol" (:# mixed sentiment example with slang and constrastive conjunction "but":)
-   )
-
-  return
-  fn:map(function($s) {
-    assert:true(vader:polarity_scores($s) instance of map:map, $s)
-  }, $sentences )
 };
