@@ -299,9 +299,9 @@ declare function polarity_scores($text as xs:string)  {
    :)
    let $wae := vader:_words_and_emoticons($text)
 
-   let $sentiments as xs:float* :=
+   let $sentiments as xs:double* :=
      fn:map(
-       function ($item) {
+       function ($item as xs:string?) {
         if (
           (
             fn:lower-case($item) = "kind" and fn:lower-case($item/following-sibling::*[1]) = "of"
@@ -344,6 +344,87 @@ declare function vader:determine-word-position(
   fn:count(
     $words-xml/word[ . = $word]/preceding-sibling::*
   ) + 1
+};
+
+declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double* {
+  (:~
+   : Given a sequence of words, return a sequence of valence scores for each
+   : word.
+   :)
+
+  let $is_cap_diff := vader:allcap_differential(fn:string-join($wae/word, " "))
+  let $dwp := vader:determine-word-position(?, $wae)
+
+  let $cap-valence := function($valence as xs:double?, $word as xs:string?) {
+    (:~
+     : Determines valence score depending upon it's intitial valence score and
+     : it's capitalization
+     :)
+    if ( fn:exists($valence) ) then
+
+      if ( fn:upper-case($word) = $word and $is_cap_diff ) then
+        if ( $valence gt 0 ) then
+          $valence + $vader:C_INCR
+        else if ( $valence lt 0 ) then (:may just leaving this as an else would work:)
+          $valence - $vader:C_INCR
+        else
+          $valence
+      else
+        $valence
+    else
+      0.0
+  }
+  (:~
+   : Take a first pass through all the words. Determine each words score based
+   : only upon itself.
+   :)
+  let $v :=
+    fn:map(
+      function($word as xs:string?) {
+        let $valence := vader:get-valence-measure(fn:lower-case($word))
+        (:let $prior-words := fn:reverse($wae/word[. =
+         : $word]/preceding-sibling::*):)
+        let $prior-words := fn:reverse($wae/word[. = $word]/preceding-sibling::*)
+        let $_ := xdmp:log($prior-words)
+        let $check := func:compose(fn:not#1,fn:exists#1,vader:get-valence-measure#1)
+        return
+          let $x := $cap-valence($valence, $word)
+          let $score :=
+            fn:fold-left(function ( $scores, $idx ){
+              let $score :=
+              $scores +
+              (
+                if (fn:exists($prior-words[$idx]) and $check($prior-words[$idx]/fn:string() )) then
+                  (: $is is intermediate s value. It's a modifier to the valence
+                   : for the word ($x)
+                   :)
+                  let $is := vader:scalar_inc_dec($prior-words[$idx], $x, $is_cap_diff)
+                  return
+                  if ( fn:not($is = 0) ) then
+                    switch ( $idx )
+                      case 2 return $is * 0.95
+                      case 3 return $is * 0.90
+                      default return $is
+                  else
+                    $is
+                else
+                  xs:double(0.0)
+              )
+              (: We've calculated our score, added our scalar modifiers. Do
+               : some other checks with this value.
+               :)
+              return vader:_never_check($score, $wae, $idx, fn:count($prior-words) + 1 )
+              (: Need to do the idioms check :)
+            }, $x, (1 to 3))
+
+          (: Score as has created, checked for negation and proximity to
+           : booster words. One final chcek and return
+           :)
+         return vader:_least_check($score, $wae, fn:count($prior-words) + 1)
+      },
+      $wae/word)
+  return $v
+
 };
 
 declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments) {
@@ -407,7 +488,7 @@ declare function vader:get-valence-measure($word as xs:string)  {
    :)
   fn:collection('vader-lexicon')/vader:lexicon/
   vader:lex[vader:word =$word]/vader:measure/data() !
-  xs:float(.)
+  xs:double(.)
 };
 
 declare function vader:determine-valence-cap($word as xs:string, $is_cap_diff as xs:boolean) {
@@ -435,7 +516,7 @@ declare function vader:exists-in-lexicon($word as xs:string) as xs:boolean {
 };
 
 declare function vader:_least_check(
-  $valence as xs:float,
+  $valence as xs:double,
   $wae as element(wrapper),
   $i as xs:integer) {
   (:~
@@ -465,7 +546,7 @@ declare function vader:_least_check(
         $valence
 };
 
-declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:float*) {
+declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:double*) {
   (:~
    : check for modification in sentiment due to contrastive conjunction 'but'
    :)
@@ -489,7 +570,7 @@ declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:fl
       $sentiments
 };
 
-declare function vader:_idioms_check($valence as xs:float, $wae as element(wrapper), $i as xs:integer) {
+declare function vader:_idioms_check($valence as xs:double, $wae as element(wrapper), $i as xs:integer) {
   (:~
    : Need to implement
    :)
@@ -497,7 +578,7 @@ declare function vader:_idioms_check($valence as xs:float, $wae as element(wrapp
 };
 
 declare function vader:_never_check(
-  $valence as xs:float, $wae as element(wrapper),
+  $valence as xs:double, $wae as element(wrapper),
   $start_i as xs:integer, $i as xs:integer) {
   let $n := "never"
   let $st := ("so","this")
@@ -541,7 +622,7 @@ declare function vader:_never_check(
       $valence
 };
 
-declare function vader:_amplify_ep($text as xs:string) as xs:float {
+declare function vader:_amplify_ep($text as xs:string) as xs:double {
   (:~
    : count exclamation points, up to 4. Retrun a booster based upon that.
    :)
@@ -551,7 +632,7 @@ declare function vader:_amplify_ep($text as xs:string) as xs:float {
   return fn:min(($f($text),4)) * 0.292
 };
 
-declare function vader:_amplify_qm($text as xs:string) as xs:float {
+declare function vader:_amplify_qm($text as xs:string) as xs:double {
   let $qm := fn:index-of(?, "?")
   let $f := func:compose(fn:count#1,$qm,functx:chars#1)
 
@@ -567,16 +648,16 @@ declare function vader:_amplify_qm($text as xs:string) as xs:float {
       0
 };
 
-declare function vader:_punctuation_emphasis($text as xs:string) as xs:float {
+declare function vader:_punctuation_emphasis($text as xs:string) as xs:double {
   vader:_amplify_ep($text) + vader:_amplify_qm($text)
 };
 
-declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map:map {
+declare function vader:_sift_sentiment_scores( $sentiments as xs:double* ) as map:map {
   map:new((
     map:entry(
       'pos',
       fn:fold-right(
-        function( $score as xs:float, $scores as xs:float* ) {
+        function( $score as xs:double, $scores as xs:double* ) {
           $scores + (
             if ( $score gt 0 ) then
               $score + 1
@@ -590,7 +671,7 @@ declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map
     map:entry(
       'neg',
       fn:fold-right(
-        function($score as xs:float, $scores as xs:float*){
+        function($score as xs:double, $scores as xs:double*){
           $scores + (
             if ($score lt 0) then
               $score - 1
@@ -604,7 +685,7 @@ declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map
     map:entry(
       'neu',
       fn:fold-right(
-        function($score as xs:float, $scores as xs:float*){
+        function($score as xs:double, $scores as xs:double*){
           $scores + (
             if ($score = 0) then
               1
@@ -620,13 +701,13 @@ declare function vader:_sift_sentiment_scores( $sentiments as xs:float* ) as map
 
 };
 
-declare function vader:score_valence ( $sentiments as xs:float*, $text as xs:string) {
+declare function vader:score_valence ( $sentiments as xs:double*, $text as xs:string) {
   (:~
    : Need to compute multiple scores and return as map:map
    :)
 
 
-  let $f := function($map as map:map, $amp as xs:float) {
+  let $f := function($map as map:map, $amp as xs:double) {
     let $p := map:get($map, 'pos')
     let $n := map:get($map, 'neg')
 
