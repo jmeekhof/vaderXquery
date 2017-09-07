@@ -547,7 +547,7 @@ declare function vader:_least_check(
       default return $valence
 };
 
-declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:double*) {
+declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:double*) as xs:double* {
   (:~
    : check for modification in sentiment due to contrastive conjunction 'but'
    :)
