@@ -102,33 +102,69 @@ declare function vader:negated ( $input-words as xs:string* )  {
   vader:negated($input-words, fn:true())
 };
 
-declare function vader:negated ( $input-words as xs:string*, $include-nt as xs:boolean) {
-(:~
- : Determine if input words contain negation words
- :)
+declare function vader:negated ( $input-words as xs:string*,
+  $include-nt as xs:boolean) {
+  (:~
+   : Determine if input words contain negation words
+   :)
+  let $test :=
 
-  let $negated as xs:boolean := $input-words = $vader:NEGATE
+    if ($include-nt) then
+      function($words) {
+        $words = $vader:NEGATE
+        or
+        (
+          some $wd in
+          ($words ! fn:matches(., "n't") )
+          satisfies ($wd = fn:true())
+        )
+      }
+    else
+      function($words) {
+        $words = $vader:NEGATE
+      }
+
   return
-  if ( $negated ) then
+  if ( $test($input-words) ) then
     fn:true()
   else
-    if ( $include-nt ) then
-      some $word in ($input-words ! fn:matches(.,"n't") ) satisfies ($word = fn:true())
+    if ( "least" = $input-words ) then
+      let $_ := xdmp:log(">>>>input-words: " || fn:string-join($input-words, " "))
+      let $ws := vader:create-word-structure($input-words)
+      let $i := fn:index-of($ws/word, "least")
+      let $_ := xdmp:log(">>>>> found 'least' " || fn:count($i) || " times")
 
+      let $foo := fn:map(function($idx){
+        let $prior-word := $ws/word[$idx]/preceding-sibling::*[1]
+        let $_:= xdmp:log(">>> prior word is:" || $prior-word)
+        return
+          fn:lower-case($prior-word) ne "at"
+      }, $i)
+      let $_ :=
+        $foo !
+          xdmp:log(">>>>foo: " || .)
+
+      return some $x in $foo satisfies ($x = fn:true())
     else
-      if ( "least" = $input-words ) then
-        let $i := fn:index-of($input-words, "least")
-        let $x :=
-          $i !
-          (
-          if ( . > 1 and fn:not($input-words[(.)-1] = "at") ) then
-            fn:true()
-          else
-            fn:false()
-          )
-        return $x
-      else
-        fn:false()
+      fn:false()
+
+(:
+      let $_ := xdmp:log(">>> pw: " || $prior-words[1])
+
+      let $_ := ( $i ! xdmp:log(">>>>>>index of 'least': " || . ) )
+      let $x :=
+        $i !
+        (
+        xdmp:log(">>>>> current node is: " || .),
+        if ( . > 1 and fn:not($input-words[. - 1] = "at") ) then
+          fn:true()
+        else
+          fn:false()
+        )
+      return $x
+    else
+      fn:false()
+:)
 };
 
 declare function normalize ($score as xs:double) as xs:double {

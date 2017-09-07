@@ -15,10 +15,12 @@ declare %test:case function  negated-test ()
   let $string5 := "this is positive"
 
   return (
-    assert:true(vader:negated(fn:tokenize($string1, " "))),
-    assert:true(vader:negated(fn:tokenize($string2, " "))),
-    assert:true(vader:negated(fn:tokenize($string4, " "))),
-    assert:false(vader:negated(fn:tokenize($string5, " ")))
+    assert:true(vader:negated(fn:tokenize($string1, " ")), $string1),
+    assert:true(vader:negated(fn:tokenize($string2, " ")), $string2),
+  (:  assert:false(vader:negated(fn:tokenize($string2, " "), fn:false()),
+   :  $string2),:)
+    assert:true(vader:negated(fn:tokenize($string4, " ")),$string4),
+    assert:false(vader:negated(fn:tokenize($string5, " ")),$string5)
   )
 
 
@@ -26,8 +28,12 @@ declare %test:case function  negated-test ()
 
 declare %test:case function  negated-test-least ()
 {
+  let $string2 := "There are things I know at least better than you"
   let $string3 := "At least I look good least"
-  return assert:false(vader:negated(fn:tokenize($string3, " ")))
+  return (
+    assert:true(vader:negated(fn:tokenize($string3, " "))),
+    assert:false(vader:negated(fn:tokenize($string2, " ")))
+  )
 };
 
 declare %test:case function  negated-test-least-again ()
@@ -35,7 +41,7 @@ declare %test:case function  negated-test-least-again ()
   let $string3 := "I like you the least yet the least"
   let $string1 := "i at least think you are good "
   return (
-    assert:false(vader:negated(fn:tokenize($string3, " "))),
+    assert:true(vader:negated(fn:tokenize($string3, " "))),
     assert:false(vader:negated(fn:tokenize($string1, " ")))
     )
 };
