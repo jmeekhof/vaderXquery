@@ -236,7 +236,7 @@ declare %test:case function sentiment_valence() {
   let $t := "this is some awesome text"
 
   return (
-    assert:equal(vader:sentiment_valence((), $t, (), (), () ), "" )
+    assert:equal(fn:count(vader:sentiment_valence(vader:_words_and_emoticons($t))), fn:count(fn:tokenize($t," ")), "There should be a valence score for each word." )
   )
 };
 
@@ -246,7 +246,11 @@ declare %test:case function _but_check() {
 
   let $modified := vader:_but_check($sentence, $sentiments)
 
-  return assert:not-equal($modified, $sentiments)
+  return (
+    assert:not-equal($modified, $sentiments),
+    (:assert:equal($modified,$sentiments, $sentence):)
+    ()
+  )
 };
 
 declare %test:case %test:ignore function _idioms_check(){
