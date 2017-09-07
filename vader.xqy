@@ -295,7 +295,6 @@ declare function polarity_scores($text as xs:string)  {
    : Return a float for sentiment strength based on the input text.
    : Positive values are positive valence, negative value are negative valence.
    :
-   : TODO: Come back after sentiment_valence
    :)
    let $wae := vader:_words_and_emoticons($text)
 
@@ -309,7 +308,7 @@ declare function polarity_scores($text as xs:string)  {
         ) then
           0
         else
-          vader:sentiment_valence(0, $text, $item, (), () )
+          vader:sentiment_valence($wae)
       },
       $wae)
 
@@ -424,62 +423,6 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
       },
       $wae/word)
   return $v
-
-};
-
-declare function vader:sentiment_valence($valence, $text, $item, $i, $sentiments) {
-  let $is_cap_diff := vader:allcap_differential($text)
-  let $wae:= vader:_words_and_emoticons($text)
-
-  (: The sentiment analysis depends upon knowing the proximity of words with
-   : other words. A simple sequence doesn't give us this very easily. Creating
-   : an xml structure give us acces to xpath axes.
-   :)
-
-  (: Look at all the words, and if the there are preceding words in the text,
-   : see if they affect the analysis
-   :)
-  let $dwp := vader:determine-word-position(?, $wae)
-
-  let $valence :=
-    fn:map(function($word) {
-      let $v :=
-        let $x := vader:get-valence-measure(fn:lower-case($word))
-        return
-          if ( fn:upper-case($word) = $word and $is_cap_diff ) then
-            if ( $x gt 0 ) then
-              $x + $vader:C_INCR
-            else
-              $x - $vader:C_INCR
-          else
-            $x
-
-      let $pos := fn:count($word/preceding-sibling::*) + 1
-      let $s := fn:map(function($pre) {
-        if ($pos gt $pre and
-          fn:not(
-            fn:exists(
-              vader:get-valence-measure(
-                fn:lower-case($wae/word[$pos - ($pre + 1)])
-              )
-            )
-          )
-        ) then
-          $pre
-        else
-          0
-      },
-      (1 to 4))
-
-
-      let $v1 := fn:sum(($v,$s))
-
-      return $v1
-    }
-    ,$wae/word)
-
-  return $valence
-
 };
 
 declare function vader:get-valence-measure($word as xs:string)  {
