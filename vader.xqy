@@ -524,30 +524,29 @@ declare function vader:_least_check(
    :)
 
   let $chk := func:compose(fn:not#1,vader:exists-in-lexicon#1)
-  let $w := $wae/word[$i - 1]
-
   return
-    switch ( $i )
-      case $i gt 2 return
-        if ( $chk($w) and fn:lower-case($w) = "least" ) then
-          if ( fn:not(fn:lower-case($wae/word[$i - 2]) = ("at","very") ) ) then
-            $valence * $vader:N_SCALAR
-          else
-            $valence
-        else
-          $valence
+    if (
+      $i gt 2 and
+      $chk($wae/word[$i - 1]) and
+      fn:lower-case($wae/word[$i - 1]) = "least"
+    ) then
 
-
-      case $i gt 1 return
-        if ( $chk($w) and fn:lower-case($w) = "least" ) then
-          $valence * $vader:N_SCALAR
-        else
-          $valence
-
-      default return $valence
+      if (fn:not(fn:lower-case($wae/word[$i - 2]) = ("at","very"))) then
+        $valence * $vader:N_SCALAR
+      else
+        $valence
+    else
+      if (
+        $i gt 1 and
+        $chk($wae/word[$i - 1]) and
+        fn:lower-case($wae/word[$i - 1]) = "least"
+      ) then
+        $valence * $vader:N_SCALAR
+      else
+        $valence
 };
 
-declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:double*) as xs:double* {
+declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:double*) {
   (:~
    : check for modification in sentiment due to contrastive conjunction 'but'
    :)
