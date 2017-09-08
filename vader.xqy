@@ -538,12 +538,16 @@ declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:do
       let $ws := $wae
       (: all the preceding items get their sentiments lowered :)
       let $preceding-i := $ws/word[$bi]/preceding-sibling::*/fn:position()
+      let $_ := xdmp:log(">>>preceding count: " || fn:count($preceding-i))
+      let $_ := $preceding-i ! xdmp:log(">>>preceding idx: " || . )
       (: all the following items get their sentiments raised :)
       let $following-i := $ws/word[$bi]/following-sibling::*/fn:position()
+      let $_ := xdmp:log(">>>following count: " || fn:count($following-i))
+      let $_ := $following-i ! xdmp:log(">>>following idx: " || . )
       return (
         fn:map(function($pos) { $sentiments[$pos] * 0.5 }, $preceding-i),
         $sentiments[$bi],
-        fn:map(function($pos) { $sentiments[$pos] * 1.5}, $following-i)
+        fn:map(function($pos) { $sentiments[$bi + $pos] * 1.5}, $following-i)
       )
     else
       $sentiments

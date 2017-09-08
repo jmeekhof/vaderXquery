@@ -248,13 +248,16 @@ declare %test:case function sentiment_valence() {
 
 declare %test:case function _but_check() {
   let $sentence := vader:_words_and_emoticons("This is good, but that is better")
-  let $sentiments := (2,2,2,1,2,2)
+  let $sentiments := (3,2,1,0,5,6)
+  (: Each score before 'but' should be *0.5, after *1.5 :)
+  let $expected := (1.5, 1, 0.5, 0, 7.5, 9)
 
   let $modified := vader:_but_check($sentence, $sentiments)
 
   return (
     assert:not-equal($modified, $sentiments),
-    (:assert:equal($modified,$sentiments, $sentence):)
+    assert:equal($modified,$expected, fn:string-join($sentence, ' ')),
+    assert:equal(fn:count($modified), fn:count($sentiments)),
     ()
   )
 };
