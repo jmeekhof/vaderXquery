@@ -129,20 +129,20 @@ declare function vader:negated ( $input-words as xs:string*,
     fn:true()
   else
     if ( "least" = $input-words ) then
-      let $_ := xdmp:log(">>>>input-words: " || fn:string-join($input-words, " "))
+      let $_ := xdmp:log(">>>>input-words: " || fn:string-join($input-words, " "), "debug")
       let $ws := vader:create-word-structure($input-words)
       let $i := fn:index-of($ws/word, "least")
-      let $_ := xdmp:log(">>>>> found 'least' " || fn:count($i) || " times")
+      let $_ := xdmp:log(">>>>> found 'least' " || fn:count($i) || " times", "debug")
 
       let $foo := fn:map(function($idx){
         let $prior-word := $ws/word[$idx]/preceding-sibling::*[1]
-        let $_:= xdmp:log(">>> prior word is:" || $prior-word)
+        let $_:= xdmp:log(">>> prior word is:" || $prior-word, "debug")
         return
           fn:lower-case($prior-word) ne "at"
       }, $i)
       let $_ :=
         $foo !
-          xdmp:log(">>>>foo: " || .)
+          xdmp:log(">>>>foo: " || ., "debug")
 
       return some $x in $foo satisfies ($x = fn:true())
     else
@@ -415,12 +415,12 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
    :)
   let $v :=
     fn:map(
-      function($word as xs:string?) {
+      function($word as element(word)) {
         let $valence := vader:get-valence-measure(fn:lower-case($word))
         (:let $prior-words := fn:reverse($wae/word[. =
          : $word]/preceding-sibling::*):)
-        let $prior-words := fn:reverse($wae/word[. = $word]/preceding-sibling::*)
-        let $_ := xdmp:log($prior-words)
+        let $prior-words := $wae/word[. = $word]/preceding-sibling::*
+        let $_ := xdmp:log($prior-words, "debug")
         let $check := func:compose(fn:not#1,fn:exists#1,vader:get-valence-measure#1)
         return
           let $x := $cap-valence($valence, $word)
