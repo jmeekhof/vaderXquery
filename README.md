@@ -2,7 +2,7 @@
 This is an XQuery implementation of [vaderSentiment](https://github.com/cjhutto/vaderSentiment).
 
 ## Why?
-Good question. The Python implementation works well. My particular problem involved a large dataset already existing on a MarkLogic server. Given the time I had to work on the project and the number of items that needed analysis porting this library to XQuery made sense.
+Good question. The Python implementation works well. My particular problem involved a large dataset already existing on a MarkLogic server. Given the time I had to work on the project and the number of items that needed analysis porting, this library to XQuery made sense.
 
 # Installation
 This XQuery library is intended to be installed as a submodule within your project. I would suggest something along the lines of:
