@@ -37,3 +37,16 @@ You'll need to adjust accordingly if you placed this submodule elsewhere.
 # General Use
 The general entry point for this module is `polarity_scores()`. This function expects a sentence, and returns a map of scores. The score you most likely care about is the `compound` score. Please see [vaderSentiment]() for a full description of what this means.
 
+## Repsonse Format
+`polarity_scores` returns a map that looks like:
+```
+map:new((
+    map:entry("neg", xs:float()),
+    map:entry("pos", xs:float()),
+    map:entry("neu", xs:float()),
+    map:entry("compound", xs:float())
+))
+```
+
+In general, the `compound` score is what you care about. This is a value that ranges from -1 to +1. A negative score indicates a negative sentiment, a positive score a positive sentiment.
+
