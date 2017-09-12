@@ -15,3 +15,25 @@ Unit tests are written using the [xray](https://github.com/robwhitby/xray) libra
 
 ### vader-lexicon.txt
 vaderSentiment contains a lexicon that it uses to determine a word's valence score. I've created a transform that will ingest the vader-lexicon and transform it into an xml document that this library uses.
+
+This transform is intended to be called by [MLCP](https://developer.marklogic.com/products/mlcp). If you're using [mlGradle](https://github.com/marklogic-community/ml-gradle), add a task like:
+```groovy
+task importLexicon(type: com.marklogic.gradle.task.MlcpTask){
+    classpath = configurations.mlcp
+    command = "IMPORT"
+    port = Integer.parseInt(mlXccPort)
+    database = mlAppConfig.contentDatabaseName
+    input_file_path = "src/main/ml-modules/root/modules/vaderXquery/*.txt"
+    output_uri_replace = ".*vader, '/vader'"
+    output_uri_suffix = ".xml"
+    document_type = "text"
+    input_file_type = "documents"
+    transform_module = "/modules/vaderXquery/transform-lexicon.xqy"
+    transform_namespace = "http://vaderSentiment/vader/transform"
+}
+```
+You'll need to adjust accordingly if you placed this submodule elsewhere.
+
+# General Use
+The general entry point for this module is `polarity_scores()`. This function expects a sentence, and returns a map of scores. The score you most likely care about is the `compound` score. Please see [vaderSentiment]() for a full description of what this means.
+
