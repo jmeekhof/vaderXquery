@@ -41,10 +41,10 @@ The general entry point for this module is `polarity_scores()`. This function ex
 `polarity_scores` returns a map that looks like:
 ```
 map:new((
-    map:entry("neg", xs:float()),
-    map:entry("pos", xs:float()),
-    map:entry("neu", xs:float()),
-    map:entry("compound", xs:float())
+    map:entry("neg", xs:decimal()),
+    map:entry("pos", xs:decimal()),
+    map:entry("neu", xs:decimal()),
+    map:entry("compound", xs:decimal())
 ))
 ```
 
