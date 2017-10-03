@@ -461,13 +461,32 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
   return $v
 };
 
+declare private function vader:valence-map() as map:map {
+  (:~
+   : Creates a map of the vader lexicon. Intended to be called by
+   : get-valence-measure to populate server field
+   :)
+  map:new(
+    fn:map(
+      function($x) {
+        map:entry($x/vader:word/fn:string(), $x/vader:score/xs:double(.))
+    },
+    fn:collection('vader-lexicon')/vader:lexicon/vader:lex
+  )
+)
+};
+
 declare function vader:get-valence-measure($word as xs:string) as xs:double?  {
   (:~
    : Retrieves the valence measure from the vader-lexicon
    :)
-  fn:collection('vader-lexicon')/vader:lexicon/
-  vader:lex[vader:word =$word][1]/vader:measure/data() !
-  xs:double(.)
+
+  let $valence-map :=
+    if ("valence-map" = xdmp:get-server-field-names()) then
+      xdmp:get-server-field("valence-map")
+    else
+      xdmp:set-server-field("valence-map", vader:valence-map())
+  return map:get($valence-map, $word)
 };
 
 declare function vader:determine-valence-cap($word as xs:string, $is_cap_diff as xs:boolean) {
