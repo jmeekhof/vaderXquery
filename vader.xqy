@@ -326,13 +326,13 @@ declare function vader:product(
   )
 };
 
-declare function polarity_scores($text as xs:string)  {
+declare function polarity_scores($text as xs:string) {
   (:~
    : Return a float for sentiment strength based on the input text.
    : Positive values are positive valence, negative value are negative valence.
    :
    :)
-   let $wae := vader:_words_and_emoticons($text)
+   let $wae := vader:_words_and_emoticons(xdmp:diacritic-less($text))
 
    let $sentiments as xs:double* :=
      fn:map(
@@ -381,6 +381,25 @@ declare function vader:determine-word-position(
   ) + 1
 };
 
+declare function vader:cap-valence($valence as xs:double?, $word as xs:string, $is_cap_diff as xs:boolean) as xs:double {
+  (:~
+   : Determines valence score depending upon it's intitial valence score and
+   : it's capitalization
+   :)
+  if ( fn:exists($valence) ) then
+    if ( fn:upper-case($word) = $word and $is_cap_diff ) then
+      if ( $valence gt 0 ) then
+        $valence + $vader:C_INCR
+      else if ( $valence lt 0 ) then (:may just leaving this as an else would work:)
+        $valence - $vader:C_INCR
+      else
+        $valence
+    else
+      $valence
+  else
+    0.0
+};
+
 declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double* {
   (:~
    : Given a sequence of words, return a sequence of valence scores for each
@@ -390,25 +409,6 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
   let $is_cap_diff := vader:allcap_differential(fn:string-join($wae/word, " "))
   let $dwp := vader:determine-word-position(?, $wae)
 
-  let $cap-valence := function($valence as xs:double?, $word as xs:string?) {
-    (:~
-     : Determines valence score depending upon it's intitial valence score and
-     : it's capitalization
-     :)
-    if ( fn:exists($valence) ) then
-
-      if ( fn:upper-case($word) = $word and $is_cap_diff ) then
-        if ( $valence gt 0 ) then
-          $valence + $vader:C_INCR
-        else if ( $valence lt 0 ) then (:may just leaving this as an else would work:)
-          $valence - $vader:C_INCR
-        else
-          $valence
-      else
-        $valence
-    else
-      0.0
-  }
   (:~
    : Take a first pass through all the words. Determine each words score based
    : only upon itself.
@@ -423,9 +423,9 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
         let $_ := xdmp:log($prior-words, "debug")
         let $check := func:compose(fn:not#1,fn:exists#1,vader:get-valence-measure#1)
         return
-          let $x := $cap-valence($valence, $word)
+          let $x := vader:cap-valence($valence, $word, $is_cap_diff)
           let $score :=
-            fn:fold-left(function ( $scores, $idx ){
+            fn:fold-left(function ( $scores, $idx ) as xs:double {
               let $score :=
               $scores +
               (
@@ -461,12 +461,12 @@ declare function vader:sentiment_valence($wae as element(wrapper) ) as xs:double
   return $v
 };
 
-declare function vader:get-valence-measure($word as xs:string)  {
+declare function vader:get-valence-measure($word as xs:string) as xs:double?  {
   (:~
    : Retrieves the valence measure from the vader-lexicon
    :)
   fn:collection('vader-lexicon')/vader:lexicon/
-  vader:lex[vader:word =$word]/vader:measure/data() !
+  vader:lex[vader:word =$word][1]/vader:measure/data() !
   xs:double(.)
 };
 
