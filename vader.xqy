@@ -12,7 +12,25 @@ declare variable $vader:B_DECR as xs:double := -0.293;
 declare variable $vader:C_INCR as xs:double := 0.733;
 declare variable $vader:N_SCALAR as xs:double := -0.74;
 
-declare variable $vader:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
+declare variable $vader:PUNC_DICT as map:map :=  map:new( (
+  map:entry(".", 1),
+  map:entry("!", 1),
+  map:entry("?", 1),
+  map:entry(",", 1),
+  map:entry(";", 1),
+  map:entry(":", 1),
+  map:entry("-", 1),
+  map:entry("'", 1),
+  map:entry('"', 1),
+  map:entry("!!", 1),
+  map:entry("!!!", 1),
+  map:entry("??", 1),
+  map:entry("???", 1),
+  map:entry("?!?", 1),
+  map:entry("!?!", 1),
+  map:entry("?!?!", 1),
+  map:entry("!?!?", 1)
+) );
 declare variable $vader:NEGATE_DICT as map:map := map:new( (
 map:entry("aint", 1),
 map:entry( "arent", 1),
@@ -315,9 +333,9 @@ declare function vader:_words_plus_punc($text as xs:string) as map:map {
 
   return
     map:new((
-      vader:product($vader:PUNC_LIST, $words_only, $combinator) !
+      vader:product(map:keys($vader:PUNC_DICT), $words_only, $combinator) !
       $entry(., 2, fn:string-join(?)),
-      vader:product($words_only, $vader:PUNC_LIST, $combinator) !
+      vader:product($words_only, map:keys($vader:PUNC_DICT), $combinator) !
       $entry(., 1, fn:string-join(?))
     ))
 
