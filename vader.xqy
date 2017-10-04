@@ -93,8 +93,6 @@ map:entry( "seldom", 1),
 map:entry( "despite", 1)
 ) );
 
-declare variable $vader:PUNC as xs:string+ := '!"#$%&#38;()*+,-./:;<=>?@[\\]^_`{|}~' || "'";
-
 declare variable $vader:BOOSTER_DICT as map:map := map:new( (
   map:entry("absolutely", $vader:B_INCR),
   map:entry("amazingly", $vader:B_INCR),
@@ -363,15 +361,20 @@ declare function _words_and_emoticons($text as xs:string) as element(wrapper) {
 declare function vader:remove-punctuation( $text as xs:string) as xs:string {
   (:~
    : Removes standard punctuation from a string of text.
+   : @author Josh Meekhof
+   : @version 1.1
+   : @param $text as xs:string The text that needs punctuation removed
+   : @return xs:string All the punctuation will be removed
    :)
-  let $f := function($x) {
-    fn:not($x = functx:chars($vader:PUNC))
-  }
+  let $f :=
+  fn:map(function($x){
+    typeswitch ($x)
+    case $x as cts:word return $x
+    default return ()
+  },
+  cts:tokenize($text))
 
-  return
-    fn:string-join(
-      fn:filter($f(?), functx:chars($text))
-    )
+  return fn:string-join($f, ' ')
 };
 
 declare function vader:remove-singeltons( $text as xs:string) as xs:string* {
