@@ -13,7 +13,67 @@ declare variable $vader:C_INCR as xs:double := 0.733;
 declare variable $vader:N_SCALAR as xs:double := -0.74;
 
 declare variable $vader:PUNC_LIST as xs:string+ := (".", "!", "?", ",", ";", ":", "-", "'", '"', "!!", "!!!", "??", "???", "?!?", "!?!", "?!?!", "!?!?");
-declare variable $vader:NEGATE as xs:string+ :=  ("aint", "arent", "cannot", "cant", "couldnt", "darent", "didnt", "doesnt", "ain't", "aren't", "can't", "couldn't", "daren't", "didn't", "doesn't", "dont", "hadnt", "hasnt", "havent", "isnt", "mightnt", "mustnt", "neither", "don't", "hadn't", "hasn't", "haven't", "isn't", "mightn't", "mustn't", "neednt", "needn't", "never", "none", "nope", "nor", "not", "nothing", "nowhere", "oughtnt", "shant", "shouldnt", "uhuh", "wasnt", "werent", "oughtn't", "shan't", "shouldn't", "uh-uh", "wasn't", "weren't", "without", "wont", "wouldnt", "won't", "wouldn't", "rarely", "seldom", "despite");
+declare variable $vader:NEGATE_DICT as map:map := map:new( (
+map:entry("aint", 1),
+map:entry( "arent", 1),
+map:entry( "cannot", 1),
+map:entry( "cant", 1),
+map:entry( "couldnt", 1),
+map:entry( "darent", 1),
+map:entry( "didnt", 1),
+map:entry( "doesnt", 1),
+map:entry( "ain't", 1),
+map:entry( "aren't", 1),
+map:entry( "can't", 1),
+map:entry( "couldn't", 1),
+map:entry( "daren't", 1),
+map:entry( "didn't", 1),
+map:entry( "doesn't", 1),
+map:entry( "dont", 1),
+map:entry( "hadnt", 1),
+map:entry( "hasnt", 1),
+map:entry( "havent", 1),
+map:entry( "isnt", 1),
+map:entry( "mightnt", 1),
+map:entry( "mustnt", 1),
+map:entry( "neither", 1),
+map:entry( "don't", 1),
+map:entry( "hadn't", 1),
+map:entry( "hasn't", 1),
+map:entry( "haven't", 1),
+map:entry( "isn't", 1),
+map:entry( "mightn't", 1),
+map:entry( "mustn't", 1),
+map:entry( "neednt", 1),
+map:entry( "needn't", 1),
+map:entry( "never", 1),
+map:entry( "none", 1),
+map:entry( "nope", 1),
+map:entry( "nor", 1),
+map:entry( "not", 1),
+map:entry( "nothing", 1),
+map:entry( "nowhere", 1),
+map:entry( "oughtnt", 1),
+map:entry( "shant", 1),
+map:entry( "shouldnt", 1),
+map:entry( "uhuh", 1),
+map:entry( "wasnt", 1),
+map:entry( "werent", 1),
+map:entry( "oughtn't", 1),
+map:entry( "shan't", 1),
+map:entry( "shouldn't", 1),
+map:entry( "uh-uh", 1),
+map:entry( "wasn't", 1),
+map:entry( "weren't", 1),
+map:entry( "without", 1),
+map:entry( "wont", 1),
+map:entry( "wouldnt", 1),
+map:entry( "won't", 1),
+map:entry( "wouldn't", 1),
+map:entry( "rarely", 1),
+map:entry( "seldom", 1),
+map:entry( "despite", 1)
+) );
 
 declare variable $vader:PUNC as xs:string+ := '!"#$%&#38;()*+,-./:;<=>?@[\\]^_`{|}~' || "'";
 
@@ -111,7 +171,11 @@ declare function vader:negated ( $input-words as xs:string*,
 
     if ($include-nt) then
       function($words) {
-        $words = $vader:NEGATE
+        (
+          some $w in
+          ($words !  map:contains($vader:NEGATE_DICT, .) )
+          satisfies ($w = fn:true())
+        )
         or
         (
           some $wd in
@@ -121,7 +185,7 @@ declare function vader:negated ( $input-words as xs:string*,
       }
     else
       function($words) {
-        $words = $vader:NEGATE
+        map:contains($vader:NEGATE_DICT, $words)
       }
 
   return
