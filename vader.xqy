@@ -383,11 +383,11 @@ declare function vader:remove-singeltons( $text as xs:string) as xs:string* {
    :
    : Returns a sequence of strings with singletons removed
    :)
-  let $f := function ($x) {
+  let $filter-func := function ($x) {
     fn:string-length($x) gt 1
   }
 
-  return fn:filter($f(?), fn:tokenize($text, ' '))
+  return fn:filter($filter-func, fn:tokenize($text, ' '))
 };
 
 declare function vader:product(
