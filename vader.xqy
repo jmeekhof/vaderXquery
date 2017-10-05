@@ -634,20 +634,23 @@ declare function vader:_but_check($wae as element(wrapper), $sentiments as xs:do
    : check for modification in sentiment due to contrastive conjunction 'but'
    :)
 
-  let $f := fn:index-of($wae/word, ?)
-  let $bi := fn:map($f(?), ('but','BUT'))[1]
+  let $bi := fn:index-of($wae/word/fn:string()!fn:lower-case(.),'but' )[1]
   return
     if ( fn:exists($bi) ) then
       (: look for the sentiments before and after the but :)
       let $ws := $wae
       (: all the preceding items get their sentiments lowered :)
       let $preceding-i := $ws/word[$bi]/preceding-sibling::*/fn:position()
+      (:
       let $_ := xdmp:log(">>>preceding count: " || fn:count($preceding-i), "debug")
       let $_ := $preceding-i ! xdmp:log(">>>preceding idx: " || . , "debug")
+      :)
       (: all the following items get their sentiments raised :)
       let $following-i := $ws/word[$bi]/following-sibling::*/fn:position()
+      (:
       let $_ := xdmp:log(">>>following count: " || fn:count($following-i))
       let $_ := $following-i ! xdmp:log(">>>following idx: " || . , "debug")
+      :)
       return (
         fn:map(function($pos) { $sentiments[$pos] * 0.5 }, $preceding-i),
         $sentiments[$bi],
