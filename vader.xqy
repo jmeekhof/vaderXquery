@@ -3,174 +3,7 @@ xquery version "1.0-ml";
 module namespace vader = "http://vaderSentiment/vader";
 import module namespace functx = "http://www.functx.com" at "/MarkLogic/functx/functx-1.0-nodoc-2007-01.xqy";
 import module namespace func = "http://snelson.org.uk/functions/functional" at "functionalxq/functional.xq";
-
-
-(:Increase decrease based upon booster words:)
-declare variable $vader:B_INCR as xs:double := 0.293;
-declare variable $vader:B_DECR as xs:double := -0.293;
-(:Intensity increase do to CAPITALIZED words:)
-declare variable $vader:C_INCR as xs:double := 0.733;
-declare variable $vader:N_SCALAR as xs:double := -0.74;
-
-declare variable $vader:PUNC_DICT as map:map :=  map:new( (
-  map:entry(".", 1),
-  map:entry("!", 1),
-  map:entry("?", 1),
-  map:entry(",", 1),
-  map:entry(";", 1),
-  map:entry(":", 1),
-  map:entry("-", 1),
-  map:entry("'", 1),
-  map:entry('"', 1),
-  map:entry("!!", 1),
-  map:entry("!!!", 1),
-  map:entry("??", 1),
-  map:entry("???", 1),
-  map:entry("?!?", 1),
-  map:entry("!?!", 1),
-  map:entry("?!?!", 1),
-  map:entry("!?!?", 1)
-) );
-declare variable $vader:NEGATE_DICT as map:map := map:new( (
-map:entry("aint", 1),
-map:entry( "arent", 1),
-map:entry( "cannot", 1),
-map:entry( "cant", 1),
-map:entry( "couldnt", 1),
-map:entry( "darent", 1),
-map:entry( "didnt", 1),
-map:entry( "doesnt", 1),
-map:entry( "ain't", 1),
-map:entry( "aren't", 1),
-map:entry( "can't", 1),
-map:entry( "couldn't", 1),
-map:entry( "daren't", 1),
-map:entry( "didn't", 1),
-map:entry( "doesn't", 1),
-map:entry( "dont", 1),
-map:entry( "hadnt", 1),
-map:entry( "hasnt", 1),
-map:entry( "havent", 1),
-map:entry( "isnt", 1),
-map:entry( "mightnt", 1),
-map:entry( "mustnt", 1),
-map:entry( "neither", 1),
-map:entry( "don't", 1),
-map:entry( "hadn't", 1),
-map:entry( "hasn't", 1),
-map:entry( "haven't", 1),
-map:entry( "isn't", 1),
-map:entry( "mightn't", 1),
-map:entry( "mustn't", 1),
-map:entry( "neednt", 1),
-map:entry( "needn't", 1),
-map:entry( "never", 1),
-map:entry( "none", 1),
-map:entry( "nope", 1),
-map:entry( "nor", 1),
-map:entry( "not", 1),
-map:entry( "nothing", 1),
-map:entry( "nowhere", 1),
-map:entry( "oughtnt", 1),
-map:entry( "shant", 1),
-map:entry( "shouldnt", 1),
-map:entry( "uhuh", 1),
-map:entry( "wasnt", 1),
-map:entry( "werent", 1),
-map:entry( "oughtn't", 1),
-map:entry( "shan't", 1),
-map:entry( "shouldn't", 1),
-map:entry( "uh-uh", 1),
-map:entry( "wasn't", 1),
-map:entry( "weren't", 1),
-map:entry( "without", 1),
-map:entry( "wont", 1),
-map:entry( "wouldnt", 1),
-map:entry( "won't", 1),
-map:entry( "wouldn't", 1),
-map:entry( "rarely", 1),
-map:entry( "seldom", 1),
-map:entry( "despite", 1)
-) );
-
-declare variable $vader:BOOSTER_DICT as map:map := map:new( (
-  map:entry("absolutely", $vader:B_INCR),
-  map:entry("amazingly", $vader:B_INCR),
-  map:entry("awfully", $vader:B_INCR),
-  map:entry("completely", $vader:B_INCR),
-  map:entry("considerably", $vader:B_INCR),
-  map:entry("decidedly", $vader:B_INCR),
-  map:entry("deeply", $vader:B_INCR),
-  map:entry("effing", $vader:B_INCR),
-  map:entry("enormously", $vader:B_INCR),
-  map:entry("entirely", $vader:B_INCR),
-  map:entry("especially", $vader:B_INCR),
-  map:entry("exceptionally", $vader:B_INCR),
-  map:entry("extremely", $vader:B_INCR),
-  map:entry("fabulously", $vader:B_INCR),
-  map:entry("flipping", $vader:B_INCR),
-  map:entry("flippin", $vader:B_INCR),
-  map:entry("fricking", $vader:B_INCR),
-  map:entry("frickin", $vader:B_INCR),
-  map:entry("frigging", $vader:B_INCR),
-  map:entry("friggin", $vader:B_INCR),
-  map:entry("fully", $vader:B_INCR),
-  map:entry("fucking", $vader:B_INCR),
-  map:entry("greatly", $vader:B_INCR),
-  map:entry("hella", $vader:B_INCR),
-  map:entry("highly", $vader:B_INCR),
-  map:entry("hugely", $vader:B_INCR),
-  map:entry("incredibly", $vader:B_INCR),
-  map:entry("intensely", $vader:B_INCR),
-  map:entry("majorly", $vader:B_INCR),
-  map:entry("more", $vader:B_INCR),
-  map:entry("most", $vader:B_INCR),
-  map:entry("particularly", $vader:B_INCR),
-  map:entry("purely", $vader:B_INCR),
-  map:entry("quite", $vader:B_INCR),
-  map:entry("really", $vader:B_INCR),
-  map:entry("remarkably", $vader:B_INCR),
-  map:entry("so", $vader:B_INCR),
-  map:entry("substantially", $vader:B_INCR),
-  map:entry("thoroughly", $vader:B_INCR),
-  map:entry("totally", $vader:B_INCR),
-  map:entry("tremendously", $vader:B_INCR),
-  map:entry("uber", $vader:B_INCR),
-  map:entry("unbelievably", $vader:B_INCR),
-  map:entry("unusually", $vader:B_INCR),
-  map:entry("utterly", $vader:B_INCR),
-  map:entry("very", $vader:B_INCR),
-  map:entry("almost", $vader:B_DECR),
-  map:entry("barely", $vader:B_DECR),
-  map:entry("hardly", $vader:B_DECR),
-  map:entry("just enough", $vader:B_DECR),
-  map:entry("kind of", $vader:B_DECR),
-  map:entry("kinda", $vader:B_DECR),
-  map:entry("kindof", $vader:B_DECR),
-  map:entry("kind-of", $vader:B_DECR),
-  map:entry("less", $vader:B_DECR),
-  map:entry("little", $vader:B_DECR),
-  map:entry("marginally", $vader:B_DECR),
-  map:entry("occasionally", $vader:B_DECR),
-  map:entry("partly", $vader:B_DECR),
-  map:entry("scarcely", $vader:B_DECR),
-  map:entry("slightly", $vader:B_DECR),
-  map:entry("somewhat", $vader:B_DECR),
-  map:entry("sort of", $vader:B_DECR),
-  map:entry("sorta", $vader:B_DECR),
-  map:entry("sortof", $vader:B_DECR),
-  map:entry("sort-of", $vader:B_DECR)
-) );
-
-declare variable $vader:SPECIAL_CASE_IDIOMS as map:map := map:new ((
-  map:entry("the shit", 3),
-  map:entry("the bomb", 3),
-  map:entry("bad ass", 1.5),
-  map:entry("yeah right", -2),
-  map:entry("cut the mustard", 2),
-  map:entry("kiss of death", -1.5),
-  map:entry("hand to mouth", -2)
-) );
+import module namespace vc = "http://vaderSentiment/vader/constants" at "vader-constants.xqy";
 
 declare option xdmp:mapping "false";
 
@@ -189,7 +22,7 @@ declare function vader:negated ( $input-words as xs:string*,
       function($words) {
         (
           some $w in
-          ($words !  map:contains($vader:NEGATE_DICT, .) )
+          ($words !  map:contains($vc:NEGATE_DICT, .) )
           satisfies ($w = fn:true())
         )
         or
@@ -201,7 +34,7 @@ declare function vader:negated ( $input-words as xs:string*,
       }
     else
       function($words) {
-        map:contains($vader:NEGATE_DICT, $words)
+        map:contains($vc:NEGATE_DICT, $words)
       }
 
   return
@@ -294,8 +127,8 @@ declare function vader:scalar_inc_dec( $word as xs:string, $valence as xs:double
   let $word_lower := fn:lower-case($word)
 
   let $scalar :=
-    if (map:contains($vader:BOOSTER_DICT, $word_lower) ) then
-      let $s := map:get($vader:BOOSTER_DICT, $word_lower)
+    if (map:contains($vc:BOOSTER_DICT, $word_lower) ) then
+      let $s := map:get($vc:BOOSTER_DICT, $word_lower)
       return
         if ( $valence lt 0 ) then
           $s * (-1)
@@ -307,9 +140,9 @@ declare function vader:scalar_inc_dec( $word as xs:string, $valence as xs:double
   return
     if ( fn:upper-case($word) = $word and $is_cap_diff) then
       if ( $valence gt 0 ) then
-        $scalar + $vader:C_INCR
+        $scalar + $vc:C_INCR
       else
-        $scalar - $vader:C_INCR
+        $scalar - $vc:C_INCR
     else
       $scalar
 };
@@ -331,9 +164,9 @@ declare function vader:_words_plus_punc($text as xs:string) as map:map {
 
   return
     map:new((
-      vader:product(map:keys($vader:PUNC_DICT), $words_only, $combinator) !
+      vader:product(map:keys($vc:PUNC_DICT), $words_only, $combinator) !
       $entry(., 2, fn:string-join(?)),
-      vader:product($words_only, map:keys($vader:PUNC_DICT), $combinator) !
+      vader:product($words_only, map:keys($vc:PUNC_DICT), $combinator) !
       $entry(., 1, fn:string-join(?))
     ))
 
@@ -425,7 +258,7 @@ declare function polarity_scores($text as xs:string) {
         if (
           (
             fn:lower-case($item) = "kind" and fn:lower-case($item/following-sibling::*[1]) = "of"
-          ) or map:contains($vader:BOOSTER_DICT, fn:lower-case($item))
+          ) or map:contains($vc:BOOSTER_DICT, fn:lower-case($item))
         ) then
           0
         else
@@ -474,9 +307,9 @@ declare function vader:cap-valence($valence as xs:double?, $word as xs:string, $
   if ( fn:exists($valence) ) then
     if ( fn:upper-case($word) = $word and $is_cap_diff ) then
       if ( $valence gt 0 ) then
-        $valence + $vader:C_INCR
+        $valence + $vc:C_INCR
       else if ( $valence lt 0 ) then (:may just leaving this as an else would work:)
-        $valence - $vader:C_INCR
+        $valence - $vc:C_INCR
       else
         $valence
     else
@@ -585,9 +418,9 @@ declare function vader:determine-valence-cap($word as xs:string, $is_cap_diff as
     if ($valence gt 0) then
       $valence + (
         if ( $is_cap_diff and ( $word = fn:upper-case($word) ) ) then
-          $vader:C_INCR
+          $vc:C_INCR
         else
-          $vader:C_INCR * -1
+          $vc:C_INCR * -1
       )
     else
       $valence
@@ -615,7 +448,7 @@ declare function vader:_least_check(
     ) then
 
       if (fn:not(fn:lower-case($wae/word[$i - 2]) = ("at","very"))) then
-        $valence * $vader:N_SCALAR
+        $valence * $vc:N_SCALAR
       else
         $valence
     else
@@ -624,7 +457,7 @@ declare function vader:_least_check(
         $chk($wae/word[$i - 1]) and
         fn:lower-case($wae/word[$i - 1]) = "least"
       ) then
-        $valence * $vader:N_SCALAR
+        $valence * $vc:N_SCALAR
       else
         $valence
 };
@@ -676,7 +509,7 @@ declare function vader:_never_check(
   switch ($start_i)
     case 1 return
       if (vader:negated($wae/word[$i - 1]) ) then
-        $valence * $vader:N_SCALAR
+        $valence * $vc:N_SCALAR
       else
         $valence
 
@@ -688,7 +521,7 @@ declare function vader:_never_check(
          : negative numbers give you the last x items in the list
          :)
         if ( vader:negated($wae/word[$i - ($start_i + 1)]) ) then
-          $valence * $vader:N_SCALAR
+          $valence * $vc:N_SCALAR
         else
           $valence
 
@@ -704,7 +537,7 @@ declare function vader:_never_check(
          : negative numbers give you the last x items in the list
          :)
         if ( vader:negated($wae/word[$i - ($start_i + 1)] ) ) then
-          $valence * $vader:N_SCALAR
+          $valence * $vc:N_SCALAR
         else
           $valence
 
